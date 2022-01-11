@@ -103,8 +103,9 @@ var routes = [...]Route{
 // requested. A proposed fix is to just use the request body but that violates
 // REST so that fix will be postponed until this actually is a problem.
 // The route for this handler is GET /v0/keys/
-// There are no authorization constraints on this route.
+// There are no authorization constraints on this route. UPDATE: Now there are :)
 func getKeysHandler(m KeyManager, principal knox.Principal, parameters map[string]string) (interface{}, *HTTPError) {
+
 	queryString := parameters["queryString"]
 
 	// Can't throw error since direct from a http request
@@ -122,14 +123,38 @@ func getKeysHandler(m KeyManager, principal knox.Principal, parameters map[strin
 		if err != nil {
 			return nil, errF(knox.InternalServerErrorCode, err.Error())
 		}
-		return keys, nil
+		verified_keys, err := verifyKeys(m, principal, keys)
+		if err != nil {
+			return nil, errF(knox.InternalServerErrorCode, err.Error())
+		}
+		return verified_keys, nil
 	}
 
 	keys, err := m.GetUpdatedKeyIDs(keyM)
 	if err != nil {
 		return nil, errF(knox.InternalServerErrorCode, err.Error())
 	}
-	return keys, nil
+	verified_keys, err := verifyKeys(m, principal, keys)
+	if err != nil {
+		return nil, errF(knox.InternalServerErrorCode, err.Error())
+	}
+	return verified_keys, nil
+}
+
+// Authorize access to keys. If user is not authorized to read key, it won't be returned
+func verifyKeys(m KeyManager, principal knox.Principal, keys []string) ([]string, error) {
+	var return_keys []string
+	fmt.Printf("Verifying keys\n")
+	for _, keyID := range keys {
+		key, err := m.GetKey(keyID, knox.Active)
+		if err != nil {
+			return nil, fmt.Errorf("can't verify principal %s access to one of the keys", principal.GetID())
+		}
+		if principal.CanAccess(key.ACL, knox.Read) {
+			return_keys = append(return_keys, keyID)
+		}
+	}
+	return return_keys, nil
 }
 
 // postKeysHandler creates a new key and stores it. It reads from the post data

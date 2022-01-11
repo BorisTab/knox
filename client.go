@@ -300,7 +300,6 @@ func (c *HTTPClient) GetKeys(keys map[string]string) ([]string, error) {
 	for k, v := range keys {
 		d.Set(k, v)
 	}
-
 	err := c.getHTTPData("GET", "/v0/keys/?"+d.Encode(), nil, &l)
 	return l, err
 }
@@ -367,8 +366,9 @@ func (c *HTTPClient) getHTTPData(method string, path string, body url.Values, da
 	}
 
 	auth := c.AuthHandler()
+	fmt.Printf("Token: %v\n", auth)
 	if auth == "" {
-		return fmt.Errorf("No authentication data given. Use 'knox login' or set KNOX_USER_AUTH or KNOX_MACHINE_AUTH")
+		return fmt.Errorf("no authentication data given. Use 'knox login' or set KNOX_USER_AUTH or KNOX_MACHINE_AUTH")
 	}
 	// Get user from env variable and machine hostname from elsewhere.
 	r.Header.Set("Authorization", auth)
@@ -389,7 +389,7 @@ func (c *HTTPClient) getHTTPData(method string, path string, body url.Values, da
 	for i := 1; i <= maxRetryAttempts; i++ {
 		err = getHTTPResp(cli, r, resp)
 		if err != nil {
-			return err
+			return fmt.Errorf("bad response from server %+v\nerror: %v", resp, err)
 		}
 		if resp.Status != "ok" {
 			if (resp.Code != InternalServerErrorCode) || (i == maxRetryAttempts) {

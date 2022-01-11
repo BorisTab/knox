@@ -1,0 +1,7 @@
+dev_*
+keycloak-dev-public-key.pem
+test_key.json
+k8s/keycloak-dev-public-key.pem
+k8s/create_secrets.sh
+k8s/ingress.yaml
+.DS_Store

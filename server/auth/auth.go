@@ -1,14 +1,14 @@
 package auth
 
 import (
-	"bytes"
+	"crypto/rsa"
 	"crypto/x509"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/golang-jwt/jwt"
 
 	"github.com/pinterest/knox"
 )
@@ -147,7 +147,6 @@ func spiffeToPrincipal(spiffeURIs []string) (knox.Principal, error) {
 	if len(spiffeURIs) > 1 {
 		return nil, fmt.Errorf("auth: more than one service identity specified in certificate")
 	}
-
 	uri := spiffeURIs[0]
 	if !strings.HasPrefix(uri, "spiffe://") {
 		return nil, fmt.Errorf("auth: service identity was not a valid SPIFFE ID (bad prefix)")
@@ -193,79 +192,63 @@ func (s *SpiffeFallbackProvider) Type() byte {
 	return (&MTLSAuthProvider{}).Type()
 }
 
-// GitHubProvider implements user authentication through github.com
-type GitHubProvider struct {
-	client httpClient
+// JWT provider implements user authentication through signed JWT tokens
+type JWTProvider struct {
+	RSAPubKey *rsa.PublicKey
 }
 
-// NewGitHubProvider initializes GitHubProvider with an HTTP client with a timeout
-func NewGitHubProvider(httpTimeout time.Duration) *GitHubProvider {
-	return &GitHubProvider{&http.Client{Timeout: httpTimeout}}
+// NewJWTProvider initializes JWTProvider
+func NewJWTProvider(RSAPubKey string) (*JWTProvider, error) {
+	PubKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(RSAPubKey))
+	if err != nil {
+		return nil, fmt.Errorf("bad rsa public key %v", RSAPubKey)
+	}
+	return &JWTProvider{
+		RSAPubKey: PubKey,
+	}, nil
 }
 
 // Version is set to 0 for GitHubProvider
-func (p *GitHubProvider) Version() byte {
+func (p *JWTProvider) Version() byte {
 	return '0'
 }
 
 // Name is the name of the provider for logging
-func (p *GitHubProvider) Name() string {
-	return "github"
+func (p *JWTProvider) Name() string {
+	return "jwt"
 }
 
-// Type is set to u for GitHubProvider since it authenticates users
-func (p *GitHubProvider) Type() byte {
+// Type is set to u for JWTProvider since it authenticates users
+func (p *JWTProvider) Type() byte {
 	return 'u'
 }
 
 // Authenticate uses the token to get user data from github.com
-func (p *GitHubProvider) Authenticate(token string, r *http.Request) (knox.Principal, error) {
-	user := &GitHubLoginFormat{}
-	if err := p.getAPI("https://api.github.com/user", token, user); err != nil {
+func (p *JWTProvider) Authenticate(tokenString string, r *http.Request) (knox.Principal, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Validating expected alg:
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		// RSA public key from Keycloak
+		return p.RSAPubKey, nil
+	})
+
+	if err != nil {
+		fmt.Printf("Error while parsing token: %v\nToken: %+v\n", err, token)
 		return nil, err
 	}
 
-	groupsJSON := &GitHubOrgFormat{}
-	if err := p.getAPI("https://api.github.com/user/orgs", token, groupsJSON); err != nil {
-		return nil, err
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if username, ok := claims["preferred_username"].(string); ok {
+			if group, ok := claims["group"].(string); ok {
+				return NewUser(username, []string{group}), nil
+			} else {
+				return NewUser(username, []string{}), nil
+			}
+		}
 	}
-	groups := make([]string, len(*groupsJSON))
-	for i, g := range *groupsJSON {
-		groups[i] = g.Name
-	}
-
-	return NewUser(user.Name, groups), nil
-}
-
-func (p *GitHubProvider) getAPI(url, token string, v interface{}) error {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Authorization", "Bearer "+token)
-	resp, err := p.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("API request returned status: %s", resp.Status)
-	}
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(v)
-	return err
-}
-
-// GitHubLoginFormat specifies the json return format for /user field.
-type GitHubLoginFormat struct {
-	Name string `json:"login"`
-}
-
-// GitHubOrgFormat specifies the JSON return format for /user/org.
-type GitHubOrgFormat []GitHubLoginFormat
-
-type httpClient interface {
-	Do(req *http.Request) (resp *http.Response, err error)
+	return nil, fmt.Errorf("bad token %+v", token)
 }
 
 // IsUser returns true if the principal, or first principal in the case of mux, is a user.
@@ -418,43 +401,53 @@ func (s service) CanAccess(acl knox.ACL, t knox.AccessType) bool {
 	return false
 }
 
-type mockHTTPClient struct{}
+// type mockHTTPClient struct{}
 
-func (c *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	resp := &http.Response{}
-	resp.Proto = "HTTP/1.1"
-	resp.ProtoMajor = 1
-	resp.ProtoMinor = 1
-	a := req.Header.Get("Authorization")
-	if a == "" || a == "Bearer notvalid" {
-		resp.StatusCode = 400
-		resp.Body = ioutil.NopCloser(bytes.NewBuffer(nil))
-		resp.Status = "400 Unauthorized"
+// func (c *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
+// 	resp := &http.Response{}
+// 	resp.Proto = "HTTP/1.1"
+// 	resp.ProtoMajor = 1
+// 	resp.ProtoMinor = 1
+// 	a := req.Header.Get("Authorization")
+// 	if a == "" || a == "Bearer notvalid" {
+// 		resp.StatusCode = 400
+// 		resp.Body = ioutil.NopCloser(bytes.NewBuffer(nil))
+// 		resp.Status = "400 Unauthorized"
 
-		return resp, nil
-	}
-	switch req.URL.Path {
-	case "/user":
-		data := "{\"login\":\"testuser\"}"
-		resp.Body = ioutil.NopCloser(bytes.NewBufferString(data))
-		resp.StatusCode = 200
-		return resp, nil
-	case "/user/orgs":
-		data := "[{\"login\":\"testgroup\"}]"
-		resp.Body = ioutil.NopCloser(bytes.NewBufferString(data))
-		resp.StatusCode = 200
-		return resp, nil
-	default:
-		resp.StatusCode = 404
-		resp.Body = ioutil.NopCloser(bytes.NewBuffer(nil))
-		resp.Status = "404 Not found"
-		return resp, nil
-	}
+// 		return resp, nil
+// 	}
+// 	switch req.URL.Path {
+// 	case "/user":
+// 		data := "{\"login\":\"testuser\"}"
+// 		resp.Body = ioutil.NopCloser(bytes.NewBufferString(data))
+// 		resp.StatusCode = 200
+// 		return resp, nil
+// 	case "/user/orgs":
+// 		data := "[{\"login\":\"testgroup\"}]"
+// 		resp.Body = ioutil.NopCloser(bytes.NewBufferString(data))
+// 		resp.StatusCode = 200
+// 		return resp, nil
+// 	default:
+// 		resp.StatusCode = 404
+// 		resp.Body = ioutil.NopCloser(bytes.NewBuffer(nil))
+// 		resp.Status = "404 Not found"
+// 		return resp, nil
+// 	}
 
-}
+// }
 
 // MockGitHubProvider returns a mocked out authentication header with a simple mock "server".
 // If there exists an authorization header with user token that does not equal 'notvalid', it will log in as 'testuser'.
-func MockGitHubProvider() *GitHubProvider {
-	return &GitHubProvider{&mockHTTPClient{}}
+func MockJWTProvider() *JWTProvider {
+	JWTProvider, _ := NewJWTProvider(
+		`-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo
+4lgOEePzNm0tRgeLezV6ffAt0gunVTLw7onLRnrq0/IzW7yWR7QkrmBL7jTKEn5u
++qKhbwKfBstIs+bMY2Zkp18gnTxKLxoS2tFczGkPLPgizskuemMghRniWaoLcyeh
+kd3qqGElvW/VDL5AaWTg0nLVkjRo9z+40RQzuVaE8AkAFmxZzow3x+VJYKdjykkJ
+0iT9wCS0DRTXu269V264Vf/3jvredZiKRkgwlL9xNAwxXFg0x/XFw005UWVRIkdg
+cKWTjpBP2dPwVZ4WWC+9aGVd+Gyn1o0CLelf4rEjGoXbAAEgAqeGUxrcIlbjXfbc
+mwIDAQAB
+-----END PUBLIC KEY-----`)
+	return JWTProvider
 }

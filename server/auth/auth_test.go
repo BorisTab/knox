@@ -280,8 +280,8 @@ func TestMTLSBadHostname(t *testing.T) {
 }
 
 func TestGetUser(t *testing.T) {
-	token := "valid"
-	a := MockGitHubProvider()
+	token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidGVzdHVzZXIiLCJncm91cCI6InRlc3Rncm91cCIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjJ9.DcS9iYP6pnATIliTA1REexXyuRuCkZMD3pugHHrB29LGY2jT6qS8evhqq-tAmzx3C0Unmu7CjglX0QAZezZM3Aa3IrKWbCVSIVjky5nO1CJ8OibC0KoK7tOUC-BrwbmeKpFX3Mjp59NfpiQD08loRNBo-g7q6vS4LR_xE78jVDb0x4ZdYboO7KJPHE40pnUEDLGT_psg_Hvtn-HFC-l76RCqxgJv3D53RwnRp0NDeAvCMEPTBfFQ931H5VFEcu9YTummdD062EAVR2KR7nYY7u4Dr2mPw4wuXDvnANjpWFuWHyw9bxB0JIiloeEAWAFjNZpT_lr_GaWrPmOk2xJzOw"
+	a := MockJWTProvider()
 	principal, err := a.Authenticate(token, nil)
 	if err != nil {
 		t.Error(err.Error())
@@ -303,7 +303,7 @@ func TestGetUser(t *testing.T) {
 
 func TestGetInvalidUser(t *testing.T) {
 	token := "notvalid"
-	a := MockGitHubProvider()
+	a := MockJWTProvider()
 	_, err := a.Authenticate(token, nil)
 	if err == nil {
 		t.Error("Expected Error with invalid token")
@@ -343,7 +343,7 @@ func TestSpiffeSuccess(t *testing.T) {
 		CAs:  caPool,
 		time: func() time.Time { return time.Date(2018, time.March, 22, 11, 0, 0, 0, time.UTC) },
 	}
-	testSpiffeAuthFlow(t, "0sANYTHING", &a)
+	testSpiffeAuthFlow(t, "0sspiffe://example.com/service", &a)
 }
 
 func TestSpiffeToPrincipalBadInput(t *testing.T) {
@@ -380,7 +380,7 @@ func testSpiffeAuthFlow(t *testing.T, authHeader string, provider Provider) {
 		PeerCertificates: []*x509.Certificate{c},
 	}
 
-	p, err := provider.Authenticate("ANYTHING", req)
+	p, err := provider.Authenticate("spiffe://example.com/service", req)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -401,5 +401,5 @@ func TestSpiffeFallbackSuccess(t *testing.T) {
 			time: func() time.Time { return time.Date(2018, time.March, 22, 11, 0, 0, 0, time.UTC) },
 		},
 	}
-	testSpiffeAuthFlow(t, "0tANYTHING", &a)
+	testSpiffeAuthFlow(t, "0sspiffe://example.com/service", &a)
 }

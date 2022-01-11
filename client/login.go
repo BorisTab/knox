@@ -99,7 +99,7 @@ func runLogin(
 	if err != nil {
 		fatalf("Problem getting password:" + err.Error())
 	}
-
+	fmt.Printf("Connecting to %v with client_id %v\n", oauthTokenEndpoint, oauthClientID)
 	resp, err := http.PostForm(oauthTokenEndpoint,
 		url.Values{
 			"grant_type": {"password"},

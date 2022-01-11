@@ -27,7 +27,7 @@ var router *mux.Router
 
 func getHTTPData(method string, path string, body url.Values, data interface{}) (string, error) {
 	r, reqErr := http.NewRequest(method, path, bytes.NewBufferString(body.Encode()))
-	r.Header.Set("Authorization", "0u"+"testuser")
+	r.Header.Set("Authorization", "0u"+"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidGVzdHVzZXIiLCJncm91cCI6InRlc3Rncm91cCIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjJ9.DcS9iYP6pnATIliTA1REexXyuRuCkZMD3pugHHrB29LGY2jT6qS8evhqq-tAmzx3C0Unmu7CjglX0QAZezZM3Aa3IrKWbCVSIVjky5nO1CJ8OibC0KoK7tOUC-BrwbmeKpFX3Mjp59NfpiQD08loRNBo-g7q6vS4LR_xE78jVDb0x4ZdYboO7KJPHE40pnUEDLGT_psg_Hvtn-HFC-l76RCqxgJv3D53RwnRp0NDeAvCMEPTBfFQ931H5VFEcu9YTummdD062EAVR2KR7nYY7u4Dr2mPw4wuXDvnANjpWFuWHyw9bxB0JIiloeEAWAFjNZpT_lr_GaWrPmOk2xJzOw")
 	if reqErr != nil {
 		return "", reqErr
 	}
@@ -60,7 +60,7 @@ func setup() {
 	decorators := [](func(http.HandlerFunc) http.HandlerFunc){
 		AddHeader("Content-Type", "application/json"),
 		AddHeader("X-Content-Type-Options", "nosniff"),
-		Authentication([]auth.Provider{auth.MockGitHubProvider()}),
+		Authentication([]auth.Provider{auth.MockJWTProvider()}),
 	}
 	var err error
 	router, err = GetRouter(cryptor, db, decorators, make([]Route, 0))
