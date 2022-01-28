@@ -169,7 +169,7 @@ AiEA/GIpOpaFQbGSs42rKugOBngKtF0fuRAo2r4vMyL559A=`
 func TestMTLSSuccess(t *testing.T) {
 	hostname := "dev-devinlundberg"
 	expected := "dev-devinlundberg"
-	req, err := http.NewRequest("GET", "http://localhost/", nil)
+	req, _ := http.NewRequest("GET", "http://localhost/", nil)
 	req.Header.Add("Authorization", "0t"+hostname)
 	req.RemoteAddr = "0.0.0.0:23423"
 	certBytes := make([]byte, base64.StdEncoding.DecodedLen(len(clientCertB64)))
@@ -177,7 +177,7 @@ func TestMTLSSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	c, err := x509.ParseCertificate(certBytes[:n])
+	c, _ := x509.ParseCertificate(certBytes[:n])
 	req.TLS = &tls.ConnectionState{
 		PeerCertificates: []*x509.Certificate{c},
 	}
@@ -200,7 +200,7 @@ func TestMTLSSuccess(t *testing.T) {
 
 func TestMTLSBadTime(t *testing.T) {
 	hostname := "dev-devinlundberg"
-	req, err := http.NewRequest("GET", "http://localhost/", nil)
+	req, _ := http.NewRequest("GET", "http://localhost/", nil)
 	req.Header.Add("Authorization", "0t"+hostname)
 	req.RemoteAddr = "0.0.0.0:23423"
 	certBytes := make([]byte, base64.StdEncoding.DecodedLen(len(clientCertB64)))
@@ -208,7 +208,7 @@ func TestMTLSBadTime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	c, err := x509.ParseCertificate(certBytes[:n])
+	c, _ := x509.ParseCertificate(certBytes[:n])
 	req.TLS = &tls.ConnectionState{
 		PeerCertificates: []*x509.Certificate{c},
 	}
@@ -228,7 +228,7 @@ func TestMTLSBadTime(t *testing.T) {
 
 func TestMTLSNoCA(t *testing.T) {
 	hostname := "dev-devinlundberg"
-	req, err := http.NewRequest("GET", "http://localhost/", nil)
+	req, _ := http.NewRequest("GET", "http://localhost/", nil)
 	req.Header.Add("Authorization", "0t"+hostname)
 	req.RemoteAddr = "0.0.0.0:23423"
 	certBytes := make([]byte, base64.StdEncoding.DecodedLen(len(clientCertB64)))
@@ -236,7 +236,7 @@ func TestMTLSNoCA(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	c, err := x509.ParseCertificate(certBytes[:n])
+	c, _ := x509.ParseCertificate(certBytes[:n])
 	req.TLS = &tls.ConnectionState{
 		PeerCertificates: []*x509.Certificate{c},
 	}
@@ -254,7 +254,7 @@ func TestMTLSNoCA(t *testing.T) {
 
 func TestMTLSBadHostname(t *testing.T) {
 	hostname := "BadHostname"
-	req, err := http.NewRequest("GET", "http://localhost/", nil)
+	req, _ := http.NewRequest("GET", "http://localhost/", nil)
 	req.Header.Add("Authorization", "0t"+hostname)
 	req.RemoteAddr = "0.0.0.0:23423"
 	certBytes := make([]byte, base64.StdEncoding.DecodedLen(len(clientCertB64)))
@@ -262,7 +262,7 @@ func TestMTLSBadHostname(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	c, err := x509.ParseCertificate(certBytes[:n])
+	c, _ := x509.ParseCertificate(certBytes[:n])
 	req.TLS = &tls.ConnectionState{
 		PeerCertificates: []*x509.Certificate{c},
 	}
@@ -340,8 +340,9 @@ func TestSpiffeSuccess(t *testing.T) {
 	caPool := x509.NewCertPool()
 	caPool.AppendCertsFromPEM([]byte(spiffeCA))
 	a := SpiffeProvider{
-		CAs:  caPool,
-		time: func() time.Time { return time.Date(2018, time.March, 22, 11, 0, 0, 0, time.UTC) },
+		isDev: true,
+		CAs:   caPool,
+		time:  func() time.Time { return time.Date(2018, time.March, 22, 11, 0, 0, 0, time.UTC) },
 	}
 	testSpiffeAuthFlow(t, "0sspiffe://example.com/service", &a)
 }
@@ -367,7 +368,7 @@ func TestSpiffeToPrincipalBadInput(t *testing.T) {
 
 func testSpiffeAuthFlow(t *testing.T, authHeader string, provider Provider) {
 	expected := "spiffe://example.com/service"
-	req, err := http.NewRequest("GET", "http://localhost/", nil)
+	req, _ := http.NewRequest("GET", "http://localhost/", nil)
 	req.Header.Add("Authorization", authHeader)
 	req.RemoteAddr = "0.0.0.0:23423"
 	certBytes := make([]byte, base64.StdEncoding.DecodedLen(len(spiffeCertB64)))
@@ -375,7 +376,7 @@ func testSpiffeAuthFlow(t *testing.T, authHeader string, provider Provider) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	c, err := x509.ParseCertificate(certBytes[:n])
+	c, _ := x509.ParseCertificate(certBytes[:n])
 	req.TLS = &tls.ConnectionState{
 		PeerCertificates: []*x509.Certificate{c},
 	}
@@ -397,8 +398,9 @@ func TestSpiffeFallbackSuccess(t *testing.T) {
 	caPool.AppendCertsFromPEM([]byte(spiffeCA))
 	a := SpiffeFallbackProvider{
 		SpiffeProvider: SpiffeProvider{
-			CAs:  caPool,
-			time: func() time.Time { return time.Date(2018, time.March, 22, 11, 0, 0, 0, time.UTC) },
+			isDev: true,
+			CAs:   caPool,
+			time:  func() time.Time { return time.Date(2018, time.March, 22, 11, 0, 0, 0, time.UTC) },
 		},
 	}
 	testSpiffeAuthFlow(t, "0sspiffe://example.com/service", &a)

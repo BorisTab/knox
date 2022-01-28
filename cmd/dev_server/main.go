@@ -161,8 +161,8 @@ func main() {
 	}
 
 	var db keydb.DB
-	_, ok = os.LookupEnv("DEV_SERVER")
-	if ok {
+	_, isDevServer := os.LookupEnv("DEV_SERVER")
+	if isDevServer {
 		db = keydb.NewTempDB()
 	} else {
 		mysql_password, ok := os.LookupEnv("MYSQL_PASSWORD")
@@ -186,8 +186,7 @@ func main() {
 	})
 
 	certPool := x509.NewCertPool()
-	_, ok = os.LookupEnv("DEV_SERVER")
-	if ok {
+	if isDevServer {
 		certPool.AppendCertsFromPEM([]byte(mtlscaCert))
 	} else {
 		spiffe_ca, ok := os.LookupEnv("SPIFFE_CA")
@@ -209,7 +208,7 @@ func main() {
 		server.Authentication([]auth.Provider{
 			auth.NewMTLSAuthProvider(certPool),
 			JWTProvider,
-			auth.NewSpiffeAuthProvider(certPool),
+			auth.NewSpiffeAuthProvider(certPool, isDevServer),
 			auth.NewSpiffeAuthFallbackProvider(certPool),
 		}),
 	}
@@ -242,7 +241,7 @@ func buildCert(hostnames []string) (certPEMBlock, keyPEMBlock []byte, err error)
 	}
 
 	notBefore := time.Now()
-	notAfter := notBefore.Add(24 * time.Hour)
+	notAfter := notBefore.Add(100 * 365 * 24 * time.Hour) // build cert for 100 years
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := crypto_rand.Int(crypto_rand.Reader, serialNumberLimit)
 	if err != nil {

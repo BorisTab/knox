@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -96,17 +97,19 @@ func (p *MTLSAuthProvider) Authenticate(token string, r *http.Request) (knox.Pri
 // NewSpiffeAuthProvider initializes a chain of trust with given CA certificates,
 // identical to the MTLS provider except the principal is a Spiffe ID instead
 // of a hostname and the CN of the cert is ignored.
-func NewSpiffeAuthProvider(CAs *x509.CertPool) *SpiffeProvider {
+func NewSpiffeAuthProvider(CAs *x509.CertPool, isDevServer bool) *SpiffeProvider {
 	return &SpiffeProvider{
-		CAs:  CAs,
-		time: time.Now,
+		isDev: isDevServer,
+		CAs:   CAs,
+		time:  time.Now,
 	}
 }
 
 // SpiffeProvider does authentication by verifying TLS certs against a collection of root CAs
 type SpiffeProvider struct {
-	CAs  *x509.CertPool
-	time func() time.Time
+	isDev bool
+	CAs   *x509.CertPool
+	time  func() time.Time
 }
 
 // Version is set to 0 for SpiffeProvider
@@ -124,8 +127,29 @@ func (p *SpiffeProvider) Type() byte {
 	return 's'
 }
 
+func (p *SpiffeProvider) ReloadCerts() error {
+	certPool := x509.NewCertPool()
+	spiffe_ca, ok := os.LookupEnv("SPIFFE_CA")
+	if !ok {
+		return fmt.Errorf("SPIFFE CA is not set")
+	}
+	ok = certPool.AppendCertsFromPEM([]byte(spiffe_ca))
+	if !ok {
+		return fmt.Errorf("couldn't reload spiffe CA cert")
+	}
+	p.CAs = certPool
+	return nil
+}
+
 // Authenticate performs TLS based Authentication and extracts the Spiffe URI extension
 func (p *SpiffeProvider) Authenticate(token string, r *http.Request) (knox.Principal, error) {
+	if !p.isDev {
+		err := p.ReloadCerts()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	cert, err := verifyCertificate(r, p.CAs, p.time)
 	if err != nil {
 		return nil, err
