@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -129,11 +130,15 @@ func (p *SpiffeProvider) Type() byte {
 
 func (p *SpiffeProvider) ReloadCerts() error {
 	certPool := x509.NewCertPool()
-	spiffe_ca, ok := os.LookupEnv("SPIFFE_CA")
+	spiffe_ca_path, ok := os.LookupEnv("SPIFFE_CA_PATH")
 	if !ok {
-		return fmt.Errorf("SPIFFE CA is not set")
+		return fmt.Errorf("SPIFFE CA path is not set")
 	}
-	ok = certPool.AppendCertsFromPEM([]byte(spiffe_ca))
+	spiffe_ca_raw, err := ioutil.ReadFile(spiffe_ca_path)
+	if err != nil {
+		return err
+	}
+	ok = certPool.AppendCertsFromPEM(spiffe_ca_raw)
 	if !ok {
 		return fmt.Errorf("couldn't reload spiffe CA cert")
 	}

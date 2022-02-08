@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"math/big"
 	"math/rand"
 	"net/http"
@@ -189,11 +190,18 @@ func main() {
 	if isDevServer {
 		certPool.AppendCertsFromPEM([]byte(mtlscaCert))
 	} else {
-		spiffe_ca, ok := os.LookupEnv("SPIFFE_CA")
+		spiffe_ca_path, ok := os.LookupEnv("SPIFFE_CA_PATH")
 		if !ok {
-			errLogger.Fatal("Spiffe CA is not set\n")
+			errLogger.Fatal("SPIFFE CA path is not set")
 		}
-		certPool.AppendCertsFromPEM([]byte(spiffe_ca))
+		spiffe_ca_raw, err := ioutil.ReadFile(spiffe_ca_path)
+		if err != nil {
+			errLogger.Fatalf("can't read SPIFFE CA %v", err)
+		}
+		ok = certPool.AppendCertsFromPEM(spiffe_ca_raw)
+		if !ok {
+			errLogger.Fatal("couldn't add spiffe CA cert")
+		}
 	}
 
 	JWTProvider, err := auth.NewJWTProvider(RSAPubKey)

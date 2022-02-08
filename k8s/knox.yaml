@@ -26,10 +26,12 @@ spec:
       imagePullSecrets:
       - name: sbercloud-harbor-dev
       containers:
-      - image: registry.sbc.platform5.club/library/knox-server:v0.1
+      - image: registry.sbc.platform5.club/library/knox-server:v0.1.1
         name: knox
         imagePullPolicy: Always
         env:
+        - name: SPIFFE_CA_PATH
+          value: /certs/bundle.crt
         - name: KNOX_DNS
           value: knox.sm-proxy:9000
         - name: RSA_PUBLIC_KEY
@@ -37,11 +39,6 @@ spec:
             secretKeyRef:
               name: keycloak-public-key
               key: public-key.pem
-        - name: SPIFFE_CA
-          valueFrom:
-            configMapKeyRef:
-              name: spire-bundle
-              key: bundle.crt
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -50,3 +47,11 @@ spec:
         ports:
         - containerPort: 9000
           name: knox
+        volumeMounts:
+        - mountPath: /certs/bundle.crt
+          name: spire-bundle
+          subPath: bundle.crt
+      volumes:
+      - name: spire-bundle
+        configMap:
+          name: spire-bundle
