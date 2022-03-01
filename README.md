@@ -63,3 +63,10 @@ docker run --name knox --rm -v "$PWD":/go/src/github.com/pinterest/knox -it gola
 This will run a bash shell into the container, mounting a local copy of knox in the go source path.
 
 You can refer back to the section "Getting knox set up" to set up knox.
+
+## Server environment
+`KNOX_DNS` - hostnames string with a comma separator. If empty, then default value is "localhost:9000"  
+`RSA_PUBLIC_KEY` - required  
+`DEV_SERVER` - if set, creates new database, otherwise requires `MYSQL_PASSWORD` and `SPIFFE_CA_PATH`   
+`MYSQL_PASSWORD` - password for your MYSQL DB  
+`SPIFFE_CA_PATH` - path to file with SPIFFE certificate  
