@@ -26,10 +26,14 @@ spec:
       imagePullSecrets:
       - name: sbercloud-harbor-dev
       containers:
-      - image: registry.sbc.platform5.club/library/knox-server:v0.1.1
+      - image: registry.sbc.platform5.club/library/knox-server:v0.1.2
         name: knox
         imagePullPolicy: Always
         env:
+        - name: CM_NAME
+          value: spire-bundle
+        - name: CRT_NAME
+          value: bundle.crt
         - name: SPIFFE_CA_PATH
           value: /certs/bundle.crt
         - name: KNOX_DNS
