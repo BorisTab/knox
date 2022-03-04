@@ -3,7 +3,7 @@
 ##
 ## Build
 ##
-FROM --platform=linux/amd64 golang:1.16-buster AS build
+FROM --platform=linux/amd64 golang:1.17-buster AS build
 
 WORKDIR /app
 
@@ -17,16 +17,18 @@ COPY log/ ./log
 COPY knox.go knox_test.go ./
 
 RUN go build -tags netgo ./cmd/dev_server
-RUN chmod +x ./dev_server
 
 ##
 ## Deploy
 ##
 FROM --platform=linux/amd64 alpine:latest
 
+RUN apk add libc6-compat
+
 WORKDIR /
 
 COPY --from=build /app/dev_server /knox-server
+RUN chmod +x ./knox-server
 EXPOSE 9000
 
 ENTRYPOINT ["/knox-server"]

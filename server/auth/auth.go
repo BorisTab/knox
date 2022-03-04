@@ -1,18 +1,25 @@
 package auth
 
 import (
+	"context"
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/pinterest/knox"
+)
+
+const (
+	namespaceFileName = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
 // Provider is used for authenticating requests via the authentication decorator.
@@ -58,6 +65,34 @@ func NewMTLSAuthProvider(CAs *x509.CertPool) *MTLSAuthProvider {
 	}
 }
 
+type k8s struct {
+	*kubernetes.Clientset
+	namespace string
+}
+
+func NewKubernetesClient() *k8s {
+	// Get things set up for watching - we need a valid k8s client
+	clientCfg, err := rest.InClusterConfig()
+	if err != nil {
+		panic("Unable to get our client configuration")
+	}
+
+	clientset, err := kubernetes.NewForConfig(clientCfg)
+	if err != nil {
+		panic("Unable to create our clientset")
+	}
+
+	namespace, err := ioutil.ReadFile(namespaceFileName)
+	if err != nil {
+		panic("Unable to read our namespace")
+	}
+
+	return &k8s{
+		clientset,
+		string(namespace),
+	}
+}
+
 // MTLSAuthProvider does authentication by verifying TLS certs against a collection of root CAs
 type MTLSAuthProvider struct {
 	CAs  *x509.CertPool
@@ -98,19 +133,25 @@ func (p *MTLSAuthProvider) Authenticate(token string, r *http.Request) (knox.Pri
 // NewSpiffeAuthProvider initializes a chain of trust with given CA certificates,
 // identical to the MTLS provider except the principal is a Spiffe ID instead
 // of a hostname and the CN of the cert is ignored.
-func NewSpiffeAuthProvider(CAs *x509.CertPool, isDevServer bool) *SpiffeProvider {
+func NewSpiffeAuthProvider(CAs *x509.CertPool, isDevServer bool, cmName, crtName string) *SpiffeProvider {
 	return &SpiffeProvider{
-		isDev: isDevServer,
-		CAs:   CAs,
-		time:  time.Now,
+		isDev:   isDevServer,
+		CAs:     CAs,
+		time:    time.Now,
+		kuber:   NewKubernetesClient(),
+		cmName:  cmName,
+		crtName: crtName,
 	}
 }
 
 // SpiffeProvider does authentication by verifying TLS certs against a collection of root CAs
 type SpiffeProvider struct {
-	isDev bool
-	CAs   *x509.CertPool
-	time  func() time.Time
+	isDev   bool
+	CAs     *x509.CertPool
+	time    func() time.Time
+	kuber   *k8s
+	cmName  string
+	crtName string
 }
 
 // Version is set to 0 for SpiffeProvider
@@ -130,15 +171,12 @@ func (p *SpiffeProvider) Type() byte {
 
 func (p *SpiffeProvider) ReloadCerts() error {
 	certPool := x509.NewCertPool()
-	spiffe_ca_path, ok := os.LookupEnv("SPIFFE_CA_PATH")
-	if !ok {
-		return fmt.Errorf("SPIFFE CA path is not set")
-	}
-	spiffe_ca_raw, err := ioutil.ReadFile(spiffe_ca_path)
+
+	spiffeCaRAW, err := p.kuber.CoreV1().ConfigMaps(p.kuber.namespace).Get(context.TODO(), p.cmName, metav1.GetOptions{})
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get spiffe CA cert from configmap")
 	}
-	ok = certPool.AppendCertsFromPEM(spiffe_ca_raw)
+	ok := certPool.AppendCertsFromPEM([]byte(spiffeCaRAW.Data[p.crtName]))
 	if !ok {
 		return fmt.Errorf("couldn't reload spiffe CA cert")
 	}

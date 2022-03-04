@@ -143,6 +143,11 @@ func main() {
 	dbEncryptionKey := []byte("testtesttesttest")
 	cryptor := keydb.NewAESGCMCryptor(0, dbEncryptionKey)
 
+	config, err := ReadConfig()
+	if err != nil {
+		errLogger.Fatal("Failed to read setting to config from environment variables:", err)
+	}
+
 	hostnames_string, ok := os.LookupEnv("KNOX_DNS")
 	var hostnames []string
 	if ok {
@@ -217,7 +222,7 @@ func main() {
 		server.Authentication([]auth.Provider{
 			auth.NewMTLSAuthProvider(certPool),
 			JWTProvider,
-			auth.NewSpiffeAuthProvider(certPool, isDevServer),
+			auth.NewSpiffeAuthProvider(certPool, isDevServer, config.CMName, config.CRTName),
 			auth.NewSpiffeAuthFallbackProvider(certPool),
 		}),
 	}
