@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/pinterest/knox"
 	"github.com/pinterest/knox/server/auth"
@@ -11,7 +12,8 @@ import (
 )
 
 func GetMocks() (KeyManager, knox.Principal, knox.ACL) {
-	db := keydb.NewTempDB()
+	// db := keydb.NewTempDB()
+	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
 	cryptor := keydb.NewAESGCMCryptor(10, []byte("testtesttesttest"))
 	m := NewKeyManager(cryptor, db)
 	acl := knox.ACL([]knox.Access{})
@@ -100,6 +102,9 @@ func TestGetAllKeyIDs(t *testing.T) {
 	} else if len(keys) != 2 {
 		t.Fatal("Unexpected # of keys in get all keys response")
 	}
+
+	m.DeleteKey("id1")
+	m.DeleteKey("id2")
 }
 
 func TestGetUpdatedKeyIDs(t *testing.T) {
@@ -182,6 +187,8 @@ func TestGetUpdatedKeyIDs(t *testing.T) {
 		t.Fatal("expected no keys")
 	}
 
+	m.DeleteKey("id1")
+	m.DeleteKey("id2")
 }
 
 func TestAddNewKey(t *testing.T) {
@@ -239,6 +246,8 @@ func TestAddNewKey(t *testing.T) {
 	if err == nil {
 		t.Fatal("Should be an error")
 	}
+
+	m.DeleteKey("id1")
 }
 
 func TestUpdateAccess(t *testing.T) {
@@ -302,6 +311,8 @@ func TestUpdateAccess(t *testing.T) {
 			t.Fatalf("unknown acl value for key %v", a)
 		}
 	}
+
+	m.DeleteKey("id1")
 }
 
 func TestAddUpdateVersion(t *testing.T) {
@@ -442,6 +453,8 @@ func TestAddUpdateVersion(t *testing.T) {
 	if kv1.CreationTime != kv.CreationTime {
 		t.Fatalf("%d does equal %d", kv1.CreationTime, kv.CreationTime)
 	}
+
+	m.DeleteKey("id1")
 }
 
 func TestGetInactiveKeyVersions(t *testing.T) {
@@ -498,4 +511,6 @@ func TestGetInactiveKeyVersions(t *testing.T) {
 	if len(key.VersionList) != 2 {
 		t.Fatalf("Wanted two key versions, got: %d", len(key.VersionList))
 	}
+
+	m.DeleteKey("id1")
 }

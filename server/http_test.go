@@ -56,7 +56,8 @@ func getRouter() *mux.Router {
 // setup reinitialized the router with a fresh keydb for every test
 func setup() {
 	cryptor := keydb.NewAESGCMCryptor(0, []byte("testtesttesttest"))
-	db := keydb.NewTempDB()
+	// db := keydb.NewTempDB()
+	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
 	decorators := [](func(http.HandlerFunc) http.HandlerFunc){
 		AddHeader("Content-Type", "application/json"),
 		AddHeader("X-Content-Type-Options", "nosniff"),
@@ -236,6 +237,8 @@ func TestAddKeys(t *testing.T) {
 	if !bytes.Equal(key.VersionList[0].Data, data) {
 		t.Fatal("Data is not consistant")
 	}
+
+	deleteKey(t, expKeyID)
 }
 
 func TestConcurrentAddKeys(t *testing.T) {
@@ -287,6 +290,9 @@ func TestConcurrentAddKeys(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+
+	deleteKey(t, "testkey")
+	deleteKey(t, "testkeyRotate")
 }
 
 func TestKeyRotation(t *testing.T) {
@@ -363,6 +369,8 @@ func TestKeyRotation(t *testing.T) {
 	if key4.VersionList[0].ID != keyVersionID2 || key4.VersionList[0].Status != knox.Primary {
 		t.Fatal("Unexpected Version or status in VersionList")
 	}
+
+	deleteKey(t, keyID)
 }
 
 func TestKeyAccessUpdates(t *testing.T) {
@@ -442,6 +450,8 @@ func TestKeyAccessUpdates(t *testing.T) {
 			}
 		}
 	}
+
+	deleteKey(t, keyID)
 }
 
 func TestKeyAccessUpdatesWithPrincipalValidation(t *testing.T) {
@@ -483,4 +493,6 @@ func TestKeyAccessUpdatesWithPrincipalValidation(t *testing.T) {
 	// we don't have a special extra validator for it (validation is built-in)
 	access = knox.Access{ID: "https://ahoy", Type: knox.Service, AccessType: knox.Read}
 	putAccessExpectedFailure(t, keyID, &access, "Service prefix is invalid URL, must conform to 'spiffe://<domain>/<path>/' format.")
+
+	deleteKey(t, keyID)
 }
