@@ -134,11 +134,15 @@ func (p *MTLSAuthProvider) Authenticate(token string, r *http.Request) (knox.Pri
 // identical to the MTLS provider except the principal is a Spiffe ID instead
 // of a hostname and the CN of the cert is ignored.
 func NewSpiffeAuthProvider(CAs *x509.CertPool, isDevServer bool, cmName, crtName string) *SpiffeProvider {
+	var kubeClient *k8s
+	if !isDevServer {
+		kubeClient = NewKubernetesClient()
+	}
 	return &SpiffeProvider{
 		isDev:   isDevServer,
 		CAs:     CAs,
 		time:    time.Now,
-		kuber:   NewKubernetesClient(),
+		kuber:   kubeClient,
 		cmName:  cmName,
 		crtName: crtName,
 	}

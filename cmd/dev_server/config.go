@@ -7,12 +7,11 @@ import (
 )
 
 type Config struct {
-	CMName string `env:"CM_NAME,notEmpty"`
+	CMName  string `env:"CM_NAME,notEmpty"`
 	CRTName string `env:"CRT_NAME,notEmpty"`
-	KnoxDNS string `env:"KNOX_DNS" envDefault:"localhost:9000"`
 }
 
-func ReadConfig() (*Config, error) {
+func ReadKubeConfig() (*Config, error) {
 	config := Config{}
 
 	err := env.Parse(&config)
