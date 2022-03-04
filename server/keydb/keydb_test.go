@@ -36,7 +36,8 @@ func newDBKey(id string, d []byte, version int64) DBKey {
 }
 
 func TestTemp(t *testing.T) {
-	db := NewTempDB()
+	// db := NewTempDB()
+	db := NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
 	timeout := 100 * time.Millisecond
 	TesterAddGet(t, db, timeout)
 	TesterAddUpdate(t, db, timeout)
@@ -169,6 +170,56 @@ func TesterErrs(t *testing.T, db DB, expErr error) {
 	}()
 }
 
+func TesterAddRemove(t *testing.T, db DB, timeout time.Duration) {
+	_, err := db.GetAll()
+	if err != nil {
+		t.Fatalf("%s not nil", err)
+	}
+	k := newDBKey("TesterAddRemove1", []byte("a"), 0)
+	err = db.Remove(k.ID)
+	if err != knox.ErrKeyIDNotFound {
+		t.Fatalf("%s does not equal %s", err, knox.ErrKeyIDNotFound)
+	}
+	err = db.Add(&k)
+	if err != nil {
+		t.Fatalf("%s not nil", err)
+	}
+	complete := false
+	timer := time.Tick(timeout)
+	for !complete {
+		select {
+		case <-timer:
+			t.Fatal("Timed out waiting TestAddGet1 to get added")
+		case <-time.Tick(1 * time.Millisecond):
+			_, err := db.Get(k.ID)
+			if err == nil {
+				complete = true
+			} else if err != knox.ErrKeyIDNotFound {
+				t.Fatal(err)
+			}
+		}
+	}
+	err = db.Remove(k.ID)
+	if err != nil {
+		t.Fatalf("%s not nil", err)
+	}
+	complete = false
+	timer = time.Tick(timeout)
+	for !complete {
+		select {
+		case <-timer:
+			t.Fatal("Timed out waiting TestAddGet1 to get added")
+		case <-time.Tick(1 * time.Millisecond):
+			_, err := db.Get(k.ID)
+			if err == knox.ErrKeyIDNotFound {
+				complete = true
+			} else if err != knox.ErrKeyIDNotFound && err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+}
+
 func TesterAddGet(t *testing.T, db DB, timeout time.Duration) {
 	origKeys, err := db.GetAll()
 	if err != nil {
@@ -215,6 +266,8 @@ func TesterAddGet(t *testing.T, db DB, timeout time.Duration) {
 	if err != knox.ErrKeyExists {
 		t.Fatalf("%s does not equal %s", err, knox.ErrKeyExists)
 	}
+
+	db.Remove(k.ID)
 }
 
 func TesterAddUpdate(t *testing.T, db DB, timeout time.Duration) {
@@ -295,54 +348,6 @@ func TesterAddUpdate(t *testing.T, db DB, timeout time.Duration) {
 			}
 		}
 	}
-}
 
-func TesterAddRemove(t *testing.T, db DB, timeout time.Duration) {
-	_, err := db.GetAll()
-	if err != nil {
-		t.Fatalf("%s not nil", err)
-	}
-	k := newDBKey("TesterAddRemove1", []byte("a"), 0)
-	err = db.Remove(k.ID)
-	if err != knox.ErrKeyIDNotFound {
-		t.Fatalf("%s does not equal %s", err, knox.ErrKeyIDNotFound)
-	}
-	err = db.Add(&k)
-	if err != nil {
-		t.Fatalf("%s not nil", err)
-	}
-	complete := false
-	timer := time.Tick(timeout)
-	for !complete {
-		select {
-		case <-timer:
-			t.Fatal("Timed out waiting TestAddGet1 to get added")
-		case <-time.Tick(1 * time.Millisecond):
-			_, err := db.Get(k.ID)
-			if err == nil {
-				complete = true
-			} else if err != knox.ErrKeyIDNotFound {
-				t.Fatal(err)
-			}
-		}
-	}
-	err = db.Remove(k.ID)
-	if err != nil {
-		t.Fatalf("%s not nil", err)
-	}
-	complete = false
-	timer = time.Tick(timeout)
-	for !complete {
-		select {
-		case <-timer:
-			t.Fatal("Timed out waiting TestAddGet1 to get added")
-		case <-time.Tick(1 * time.Millisecond):
-			_, err := db.Get(k.ID)
-			if err == knox.ErrKeyIDNotFound {
-				complete = true
-			} else if err != knox.ErrKeyIDNotFound && err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
+	db.Remove(k.ID)
 }

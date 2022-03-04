@@ -164,7 +164,8 @@ func main() {
 	var db keydb.DB
 	_, isDevServer := os.LookupEnv("DEV_SERVER")
 	if isDevServer {
-		db = keydb.NewTempDB()
+		// db = keydb.NewTempDB()
+		db = keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
 	} else {
 		mysql_password, ok := os.LookupEnv("MYSQL_PASSWORD")
 		if !ok {
