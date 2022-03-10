@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -18,7 +17,6 @@ import (
 
 	"github.com/pinterest/knox"
 	"github.com/pinterest/knox/server/auth/authz_utils"
-	// "github.com/pavelzhurov/authz-utils"
 )
 
 const (
@@ -360,13 +358,7 @@ func setFromList(groups []string) *stringSet {
 
 // NewUser creates a user principal with the given auth Provider.
 func NewUser(id string, groups []string) knox.Principal {
-	auth, err := authz_utils.NewAuthenticatorFromEnv()
-
-	if err != nil {
-		log.Fatal("Can't create authenticator:", err.Error())
-	}
-
-	return user{id, *setFromList(groups), auth}
+	return user{id, *setFromList(groups)}
 }
 
 // NewMachine creates a machine principal with the given auth Provider.
@@ -381,9 +373,8 @@ func NewService(domain string, path string) knox.Principal {
 
 // User represents an LDAP user and the AuthProvider to allow group information
 type user struct {
-	ID            string
-	groups        stringSet
-	authenticator *authz_utils.Authenticator
+	ID     string
+	groups stringSet
 }
 
 func (u user) inGroup(g string) bool {
@@ -402,31 +393,6 @@ func (u user) Type() string {
 // CanAccess determines if a User can access an object represented by the ACL
 // with a certain AccessType. It compares LDAP username and LDAP group.
 func (u user) CanAccess(acl knox.ACL, t knox.AccessType) bool {
-	// action := ""
-
-	// switch t {
-	// case knox.None:
-	// 	action = "none"
-	// case knox.Read:
-	// 	action = "read"
-	// case knox.Write:
-	// 	action = "write"
-	// case knox.Admin:
-	// 	action = "admin"
-	// default:
-	// 	fmt.Println("Access error: wrong knox.AccessType")
-	// 	return false
-	// }
-
-	// result, err := u.authenticator.Authz("pvc", "kms", u.ID, action, "*", nil)
-
-	// if err != nil {
-	// 	fmt.Println("Authenticator error: " + err.Error())
-	// 	return false
-	// }
-
-	// return result
-
 	for _, a := range acl {
 		switch a.Type {
 		case knox.User:
@@ -442,26 +408,18 @@ func (u user) CanAccess(acl knox.ACL, t knox.AccessType) bool {
 	return false
 }
 
-func (u user) CanAccessOPA(path string, t knox.AccessType) bool {
+func (u user) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, t knox.AccessType) bool {
 	const partition = "pvc"
 	const service = "kms"
-	action := ""
 
-	switch t {
-	case knox.None:
-		action = "none"
-	case knox.Read:
-		action = "read"
-	case knox.Write:
-		action = "write"
-	case knox.Admin:
-		action = "admin"
-	default:
-		fmt.Println("Access error: wrong knox.AccessType")
+	action, err := t.Type()
+
+	if err != nil {
+		fmt.Println("Error: " + err.Error())
 		return false
 	}
 
-	result, err := u.authenticator.Authz(partition, service, u.ID, action, path, nil)
+	result, err := authenticator.Authz(partition, service, u.ID, action, path, nil)
 
 	if err != nil {
 		fmt.Println("Authenticator error: " + err.Error())
@@ -502,8 +460,8 @@ func (m machine) CanAccess(acl knox.ACL, t knox.AccessType) bool {
 	return false
 }
 
-func (m machine) CanAccessOPA(path string, t knox.AccessType) bool {
-	return false
+func (m machine) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, t knox.AccessType) bool {
+	return true
 }
 
 // Service represents a given service from a trust domain
@@ -540,8 +498,25 @@ func (s service) CanAccess(acl knox.ACL, t knox.AccessType) bool {
 	return false
 }
 
-func (s service) CanAccessOPA(path string, t knox.AccessType) bool {
-	return false
+func (s service) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, t knox.AccessType) bool {
+	const partition = "pvc"
+	const service = "kms"
+
+	action, err := t.Type()
+
+	if err != nil {
+		fmt.Println("Error: " + err.Error())
+		return false
+	}
+
+	result, err := authenticator.Authz(partition, service, s.GetID(), action, path, nil)
+
+	if err != nil {
+		fmt.Println("Authenticator error: " + err.Error())
+		return false
+	}
+
+	return result
 }
 
 // type mockHTTPClient struct{}
