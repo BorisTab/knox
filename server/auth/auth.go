@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -359,14 +360,13 @@ func setFromList(groups []string) *stringSet {
 
 // NewUser creates a user principal with the given auth Provider.
 func NewUser(id string, groups []string) knox.Principal {
-	println("new user")
-	// auth, err := authz_utils.NewAuthenticatorFromEnv()
+	auth, err := authz_utils.NewAuthenticatorFromEnv()
 
-	// if err != nil {
-	// 	log.Fatal("Can't create authenticator:", err.Error())
-	// }
+	if err != nil {
+		log.Fatal("Can't create authenticator:", err.Error())
+	}
 
-	return user{id, *setFromList(groups), nil}
+	return user{id, *setFromList(groups), auth}
 }
 
 // NewMachine creates a machine principal with the given auth Provider.
