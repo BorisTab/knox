@@ -461,7 +461,24 @@ func (m machine) CanAccess(acl knox.ACL, t knox.AccessType) bool {
 }
 
 func (m machine) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, t knox.AccessType) bool {
-	return true
+	const partition = "pvc"
+	const service = "kms"
+
+	action, err := t.Type()
+
+	if err != nil {
+		fmt.Println("Error: " + err.Error())
+		return false
+	}
+
+	result, err := authenticator.Authz(partition, service, string(m), action, path, nil)
+
+	if err != nil {
+		fmt.Println("Authenticator error: " + err.Error())
+		return false
+	}
+
+	return result
 }
 
 // Service represents a given service from a trust domain
