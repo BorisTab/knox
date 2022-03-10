@@ -505,6 +505,7 @@ func (kvl KeyVersionList) Update(versionID uint64, s VersionStatus) (KeyVersionL
 // This interface is currently defined for people and machines.
 type Principal interface {
 	CanAccess(ACL, AccessType) bool
+	CanAccessOPA(string, AccessType) bool
 	GetID() string
 	Type() string
 }
@@ -523,6 +524,15 @@ type PrincipalMux struct {
 func (p PrincipalMux) CanAccess(acl ACL, accessType AccessType) bool {
 	for _, p := range p.allPrincipals {
 		if p.CanAccess(acl, accessType) {
+			return true
+		}
+	}
+	return false
+}
+
+func (p PrincipalMux) CanAccessOPA(path string, accessType AccessType) bool {
+	for _, p := range p.allPrincipals {
+		if p.CanAccessOPA(path, accessType) {
 			return true
 		}
 	}
