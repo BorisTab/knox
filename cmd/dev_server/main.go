@@ -143,11 +143,6 @@ func main() {
 	dbEncryptionKey := []byte("testtesttesttest")
 	cryptor := keydb.NewAESGCMCryptor(0, dbEncryptionKey)
 
-	config, err := ReadConfig()
-	if err != nil {
-		errLogger.Fatal("Failed to read setting to config from environment variables:", err)
-	}
-
 	hostnames_string, ok := os.LookupEnv("KNOX_DNS")
 	var hostnames []string
 	if ok {
@@ -168,10 +163,18 @@ func main() {
 
 	var db keydb.DB
 	_, isDevServer := os.LookupEnv("DEV_SERVER")
+	var kubeConfig *Config
+
 	if isDevServer {
 		// db = keydb.NewTempDB()
 		db = keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
+		kubeConfig = &Config{}
 	} else {
+		kubeConfig, err = ReadKubeConfig()
+		if err != nil {
+			errLogger.Fatal("Failed to read setting to config from environment variables:", err)
+		}
+
 		mysql_password, ok := os.LookupEnv("MYSQL_PASSWORD")
 		if !ok {
 			errLogger.Fatal("MYSQL_PASSWORD is not set\n")
@@ -222,7 +225,7 @@ func main() {
 		server.Authentication([]auth.Provider{
 			auth.NewMTLSAuthProvider(certPool),
 			JWTProvider,
-			auth.NewSpiffeAuthProvider(certPool, isDevServer, config.CMName, config.CRTName),
+			auth.NewSpiffeAuthProvider(certPool, isDevServer, kubeConfig.CMName, kubeConfig.CRTName),
 			auth.NewSpiffeAuthFallbackProvider(certPool),
 		}),
 	}
