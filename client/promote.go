@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 var cmdPromote = &Command{
@@ -15,7 +15,7 @@ Promote will take an active key version and make it the primary key version. Thi
 
 To use this command, you must have write permissions on the key.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox reactivate, knox deactivate
 	`,

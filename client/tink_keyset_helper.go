@@ -16,7 +16,7 @@ import (
 	"github.com/google/tink/go/mac"
 	"github.com/google/tink/go/signature"
 	"github.com/google/tink/go/streamingaead"
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 
 	tinkpb "github.com/google/tink/go/proto/tink_go_proto"
 )

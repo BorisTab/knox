@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 func init() {
@@ -26,7 +26,7 @@ This key version will be set to active upon creation. The version id will be sen
 
 This command uses user access and requires write access in the key's ACL.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox create, knox promote
 	`,

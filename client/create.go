@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 func init() {
@@ -28,7 +28,7 @@ The original key version id will be print to stdout.
 
 To create a new key, user credentials are required. The default access list will include the creator of this key and a limited set of site reliablity and security engineers.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox add, knox get
 	`,

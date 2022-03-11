@@ -21,7 +21,7 @@ Will authenticate user via OAuth2 password grant flow if available. Requires use
 
 The optional username argument can specify the user that to log in as otherwise it uses the current os user.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox help auth
 	`

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 var ErrDBVersion = fmt.Errorf("DB version does not match")
