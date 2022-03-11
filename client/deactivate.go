@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 var cmdDeactivate = &Command{
@@ -19,7 +19,7 @@ Primary keys cannot be deactivated. Only active keys can be deactivated.
 
 This command requires write access to the key.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox reactivate, knox promote
 	`,

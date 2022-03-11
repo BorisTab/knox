@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pinterest/knox/server/auth/authz_utils"
+	authz_utils "github.com/pavelzhurov/authz-utils"
 )
 
 var (

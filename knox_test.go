@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	. "github.com/pinterest/knox"
+	. "github.com/pavelzhurov/knox"
 )
 
 func TestKeyVersionListHash(t *testing.T) {

@@ -29,7 +29,7 @@ Note that knox register will only update the register file and will return succe
 even if the machine does not have access to the key. The daemon will actually retrieve
 the key.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox unregister, knox daemon
 	`,

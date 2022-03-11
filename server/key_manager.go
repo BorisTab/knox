@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/pinterest/knox"
-	"github.com/pinterest/knox/server/auth/authz_utils"
-	"github.com/pinterest/knox/server/keydb"
+	authz_utils "github.com/pavelzhurov/authz-utils"
+	"github.com/pavelzhurov/knox"
+	"github.com/pavelzhurov/knox/server/keydb"
 )
 
 // KeyManager is the interface for logic related to managing keys.

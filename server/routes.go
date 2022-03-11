@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/pinterest/knox"
-	"github.com/pinterest/knox/server/auth"
+	"github.com/pavelzhurov/knox"
+	"github.com/pavelzhurov/knox/server/auth"
 )
 
 var routes = [...]Route{

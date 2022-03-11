@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -15,8 +16,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/pinterest/knox"
-	"github.com/pinterest/knox/server/auth/authz_utils"
+	authz_utils "github.com/pavelzhurov/authz-utils"
+	"github.com/pavelzhurov/knox"
 )
 
 const (
@@ -415,14 +416,14 @@ func (u user) CanAccessOPA(authenticator *authz_utils.Authenticator, path string
 	action, err := t.Type()
 
 	if err != nil {
-		fmt.Println("Error: " + err.Error())
+		log.Println("Error: " + err.Error())
 		return false
 	}
 
 	result, err := authenticator.Authz(partition, service, u.ID, action, path, nil)
 
 	if err != nil {
-		fmt.Println("Authenticator error: " + err.Error())
+		log.Println("Authenticator error: " + err.Error())
 		return false
 	}
 
@@ -467,14 +468,14 @@ func (m machine) CanAccessOPA(authenticator *authz_utils.Authenticator, path str
 	action, err := t.Type()
 
 	if err != nil {
-		fmt.Println("Error: " + err.Error())
+		log.Println("Error: " + err.Error())
 		return false
 	}
 
 	result, err := authenticator.Authz(partition, service, string(m), action, path, nil)
 
 	if err != nil {
-		fmt.Println("Authenticator error: " + err.Error())
+		log.Println("Authenticator error: " + err.Error())
 		return false
 	}
 
@@ -522,14 +523,14 @@ func (s service) CanAccessOPA(authenticator *authz_utils.Authenticator, path str
 	action, err := t.Type()
 
 	if err != nil {
-		fmt.Println("Error: " + err.Error())
+		log.Println("Error: " + err.Error())
 		return false
 	}
 
 	result, err := authenticator.Authz(partition, service, s.GetID(), action, path, nil)
 
 	if err != nil {
-		fmt.Println("Authenticator error: " + err.Error())
+		log.Println("Authenticator error: " + err.Error())
 		return false
 	}
 
