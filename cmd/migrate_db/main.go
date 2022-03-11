@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/pinterest/knox"
-	"github.com/pinterest/knox/server/keydb"
+	"github.com/pavelzhurov/knox"
+	"github.com/pavelzhurov/knox/server/keydb"
 )
 
 func moveKeyData(sDB keydb.DB, sCrypt keydb.Cryptor, dDB keydb.DB, dCrypt keydb.Cryptor) error {

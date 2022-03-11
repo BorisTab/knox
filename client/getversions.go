@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 func init() {
@@ -23,7 +23,7 @@ versions get all of the version ids for a key.
 
 This requires read access to the key and can use user or machine authentication.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox keys, knox get
 	`,

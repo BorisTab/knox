@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 var cmdReactivate = &Command{
@@ -18,7 +18,7 @@ Inactive keys should not be used for any purpose.
 
 This command requires write access to the key.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox deactivate, knox promote
 	`,

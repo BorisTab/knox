@@ -18,11 +18,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pinterest/knox"
-	"github.com/pinterest/knox/log"
-	"github.com/pinterest/knox/server"
-	"github.com/pinterest/knox/server/auth"
-	"github.com/pinterest/knox/server/keydb"
+	"github.com/pavelzhurov/knox"
+	"github.com/pavelzhurov/knox/log"
+	"github.com/pavelzhurov/knox/server"
+	"github.com/pavelzhurov/knox/server/auth"
+	"github.com/pavelzhurov/knox/server/keydb"
 
 	_ "github.com/go-sql-driver/mysql"
 )

@@ -12,7 +12,7 @@ import (
 	"github.com/google/tink/go/keyset"
 	"github.com/google/tink/go/mac"
 	"github.com/google/tink/go/testkeyset"
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 
 	tinkpb "github.com/google/tink/go/proto/tink_go_proto"
 )

@@ -11,7 +11,7 @@ var cmdDelete = &Command{
 	Long: `
 This will delete your key and all data from the knox server. This operation is dangerous and requires admin permissions
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox create
     `,

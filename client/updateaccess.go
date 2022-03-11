@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 func init() {
@@ -27,14 +27,14 @@ Access will add or change the acl on a key by adding a specific access control r
 
 -M: A specific machine. The principal should be set to the exact hostname.
 -U: A specific user. The principal should be set to the ldap username of the user.
--G: A specific user group. The principal should be set to the group name. This takes the format of ou=Security,ou=Prod,ou=groups,dc=pinterest,dc=com in LDAP.
+-G: A specific user group. The principal should be set to the group name. This takes the format of ou=Security,ou=Prod,ou=groups,dc=pavelzhurov,dc=com in LDAP.
 -P: A machine hostname prefix. Prefix matching will be used to determine access. For example, if the principal is set to 'auth' then 'auth004' would match (and so would any hostname beginning with auth).
 -S: A specific service. The principal should be set to the exact SPIFFE ID. For example, 'spiffe://example.com/service'.
 -N: A service prefix (namespace). The principal should be set to a SPIFFE ID ending with a slash, such as 'spiffe://example.com/namespace/'. This will match all services under that prefix, so for example 'spiffe://example.com/namespace/service' would be allowed.
 
 This command requires admin access to the key.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox create, knox get
 	`,

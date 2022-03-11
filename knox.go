@@ -11,6 +11,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	authz_utils "github.com/pavelzhurov/authz-utils"
 )
 
 var (
@@ -286,6 +288,21 @@ func (s AccessType) MarshalJSON() ([]byte, error) {
 	}
 }
 
+func (s AccessType) Type() (string, error) {
+	switch s {
+	case Read:
+		return "Read", nil
+	case Write:
+		return "Write", nil
+	case Admin:
+		return "Admin", nil
+	case None:
+		return "None", nil
+	default:
+		return "", invalidTypeError{"AccessType"}
+	}
+}
+
 // CanAccess uses a principal's AccessType to determine if the principal can
 // access a given resource.
 func (s AccessType) CanAccess(resource AccessType) bool {
@@ -505,6 +522,7 @@ func (kvl KeyVersionList) Update(versionID uint64, s VersionStatus) (KeyVersionL
 // This interface is currently defined for people and machines.
 type Principal interface {
 	CanAccess(ACL, AccessType) bool
+	CanAccessOPA(*authz_utils.Authenticator, string, AccessType) bool
 	GetID() string
 	Type() string
 }
@@ -523,6 +541,15 @@ type PrincipalMux struct {
 func (p PrincipalMux) CanAccess(acl ACL, accessType AccessType) bool {
 	for _, p := range p.allPrincipals {
 		if p.CanAccess(acl, accessType) {
+			return true
+		}
+	}
+	return false
+}
+
+func (p PrincipalMux) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, accessType AccessType) bool {
+	for _, p := range p.allPrincipals {
+		if p.CanAccessOPA(authenticator, path, accessType) {
 			return true
 		}
 	}
