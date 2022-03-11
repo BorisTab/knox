@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 

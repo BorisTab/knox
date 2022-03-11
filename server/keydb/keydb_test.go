@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 	/* For DB testing:
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"

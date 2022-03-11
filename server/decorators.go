@@ -6,9 +6,9 @@ import (
 	"net/url"
 
 	"github.com/gorilla/context"
-	"github.com/pinterest/knox"
-	"github.com/pinterest/knox/log"
-	"github.com/pinterest/knox/server/auth"
+	"github.com/pavelzhurov/knox"
+	"github.com/pavelzhurov/knox/log"
+	"github.com/pavelzhurov/knox/server/auth"
 )
 
 type contextKey int

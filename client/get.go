@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 func init() {
@@ -27,7 +27,7 @@ Get gets the key data for a key.
 
 This requires read access to the key.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox create, knox daemon, knox register, knox keys
 	`,

@@ -16,7 +16,7 @@ import (
 
 	"gopkg.in/fsnotify.v1"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 var cmdDaemon = &Command{
@@ -30,7 +30,7 @@ This process will keep running until sent a kill signal or it crashes.
 
 This maintains a file system cache of knox keys that is used for all other knox commands.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox register, knox unregister
 	`,
