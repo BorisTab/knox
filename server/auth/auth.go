@@ -409,10 +409,7 @@ func (u user) CanAccess(acl knox.ACL, t knox.AccessType) bool {
 	return false
 }
 
-func (u user) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, t knox.AccessType) bool {
-	const partition = "pvc"
-	const service = "kms"
-
+func (u user) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, t knox.AccessType, partition string, service string) bool {
 	action, err := t.Type()
 
 	if err != nil {
@@ -461,10 +458,7 @@ func (m machine) CanAccess(acl knox.ACL, t knox.AccessType) bool {
 	return false
 }
 
-func (m machine) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, t knox.AccessType) bool {
-	const partition = "pvc"
-	const service = "kms"
-
+func (m machine) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, t knox.AccessType, partition string, service string) bool {
 	action, err := t.Type()
 
 	if err != nil {
@@ -516,10 +510,7 @@ func (s service) CanAccess(acl knox.ACL, t knox.AccessType) bool {
 	return false
 }
 
-func (s service) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, t knox.AccessType) bool {
-	const partition = "pvc"
-	const service = "kms"
-
+func (s service) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, t knox.AccessType, partition string, service string) bool {
 	action, err := t.Type()
 
 	if err != nil {
