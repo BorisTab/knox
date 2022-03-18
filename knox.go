@@ -403,7 +403,7 @@ type Key struct {
 // Validate calls makes sure all attributes of key are in good state.
 func (k Key) Validate() error {
 	// Check keyID characters
-	re := regexp.MustCompile("^[a-zA-Z0-9_:]+$")
+	re := regexp.MustCompile("^[a-zA-Z0-9_:-]+$")
 	if !re.MatchString(k.ID) {
 		return ErrInvalidKeyID
 	}
