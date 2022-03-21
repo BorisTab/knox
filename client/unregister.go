@@ -11,7 +11,7 @@ var cmdUnregister = &Command{
 	Long: `
 Unregister stops cacheing and refreshing a specific key, deleting the associated files.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox register, knox daemon
 	`,

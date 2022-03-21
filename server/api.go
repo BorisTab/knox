@@ -10,9 +10,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/pinterest/knox"
-	"github.com/pinterest/knox/log"
-	"github.com/pinterest/knox/server/keydb"
+	"github.com/pavelzhurov/knox"
+	"github.com/pavelzhurov/knox/log"
+	"github.com/pavelzhurov/knox/server/keydb"
 )
 
 // HTTPError is the error type with knox err subcode and message for logging purposes

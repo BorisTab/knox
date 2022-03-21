@@ -15,7 +15,7 @@ If no version ids are given, it returns all key ids.
 
 This requires valid user or machine authentication, but there are no authorization requirements.
 
-For more about knox, see https://github.com/pinterest/knox.
+For more about knox, see https://github.com/pavelzhurov/knox.
 
 See also: knox get, knox create, knox daemon
 	`,

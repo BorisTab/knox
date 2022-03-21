@@ -2,9 +2,11 @@ package server
 
 import (
 	"fmt"
+	"log"
 
-	"github.com/pinterest/knox"
-	"github.com/pinterest/knox/server/keydb"
+	authz_utils "github.com/pavelzhurov/authz-utils"
+	"github.com/pavelzhurov/knox"
+	"github.com/pavelzhurov/knox/server/keydb"
 )
 
 // KeyManager is the interface for logic related to managing keys.
@@ -17,16 +19,27 @@ type KeyManager interface {
 	UpdateAccess(string, ...knox.Access) error
 	AddVersion(string, *knox.KeyVersion) error
 	UpdateVersion(keyID string, versionID uint64, s knox.VersionStatus) error
+	GetAuthenticator() *authz_utils.Authenticator
 }
 
 // NewKeyManager builds a struct for interfacing with the keydb.
 func NewKeyManager(c keydb.Cryptor, db keydb.DB) KeyManager {
-	return &keyManager{c, db}
+	auth, err := authz_utils.NewAuthenticatorFromEnv()
+
+	if err != nil {
+		log.Fatal("Can't create authenticator:", err.Error())
+	}
+	return &keyManager{c, db, auth}
 }
 
 type keyManager struct {
-	cryptor keydb.Cryptor
-	db      keydb.DB
+	cryptor       keydb.Cryptor
+	db            keydb.DB
+	authenticator *authz_utils.Authenticator
+}
+
+func (m *keyManager) GetAuthenticator() *authz_utils.Authenticator {
+	return m.authenticator
 }
 
 func (m *keyManager) GetAllKeyIDs() ([]string, error) {

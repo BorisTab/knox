@@ -10,7 +10,7 @@ import (
 
 	"testing"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 func TestUserCanAccess(t *testing.T) {

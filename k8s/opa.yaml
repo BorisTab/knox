@@ -1,0 +1,206 @@
+apiVersion: v1
+data:
+  data.json: |
+      {
+        "Version": "2021-11-25",
+        "Statement": [
+            {
+                "Principal": {
+                    "user": "44dfabb0_5a19_47f6_85ab_a66c165c2581"
+                },
+                "Effect": "Allow",
+                "Action": [
+                    "*"
+                ],
+                "Resource": ["rn:pvc:kms:AZ1:123:456:789/*/*"]
+            },
+            {
+                "Principal": {
+                    "user": "{{ .Values.user }}"
+                },
+                "Effect": "Allow",
+                "Action": [
+                    "*"
+                ],
+                "Resource": ["rn:pvc:S3:{{ .Values.availability_zone }}:{{ .Values.account_id }}:{{ .Values.project_id }}:{{ .Values.resource_id }}/*"]
+            }
+        ]
+      }
+
+
+
+
+
+
+  access_control.rego: |
+     package system
+     
+     main = allow
+     # resource = [[check_resource(statement, region, account_id, project_id, resource_id), statement.Principal.user] | 
+     # 	region := get_region
+     # 	get_username_account_and_project_ids[[user, account_id, project_id, resource_id]]
+     # 	statement := data.policy.Statement[i]]
+     # # action = [[check_action(statement), statement.Principal.user] | statement := data.policy.Statement[i]]
+     # # condition = [[check_condition(statement), statement.Principal.user] | statement := data.policy.Statement[i]]
+     default allow = false
+     
+     check_action(statement) {
+         concat(":", [input.service, input.action]) == statement.Action[_]
+     }
+     
+     check_action(statement) {
+         "*" == statement.Action[_]
+     }
+     
+     check_project_params(statement, region, account_id, project_id, resource_id) {
+     	split(statement.Resource[_], "/")[0] == concat(":", ["rn", input.partition, input.service, region, account_id, project_id, resource_id])
+     }
+     
+     check_subpath(statement_subpath, input_subpath){
+     	statement_subpath == "*"
+     }
+     
+     check_subpath(statement_subpath, input_subpath){
+     	statement_subpath == input_subpath
+     }
+     
+     check_path(resource) {
+     	count(split(resource, "/")) == count(split(input.path, "/")) + 1
+         results_array := [true |split(input.path, "/")[_]]
+         paths := [check_subpath(statement_subpath, input_subpath) | 
+         	input_subpath := split(input.path, "/")[i]
+             statement_subpath := split(resource, "/")[i+1]
+         ]
+         results_array == paths
+     }
+     
+     check_path(resource) {
+      input.path == "/"
+     }
+     
+     check_path(resource) {
+      count(split(resource, "/")) == 2
+      split(resource, "/")[1] == "*"
+     }
+     
+     check_resource(statement, region, account_id, project_id, resource_id) {
+     	check_project_params(statement, region, account_id, project_id, resource_id)
+         check_path(statement.Resource[0])
+     }
+     
+     condition_tags(condition) {
+         condition[concat("/", [concat(":", [input.service, "ExistingObjectTag"]), tag_key])] == input.tags[tag_key]
+     }
+     
+     check_condition(statement) {
+         condition_tags(statement.Condition["StringEquals"])
+     }
+     
+     check_condition(statement) {
+         not statement.Condition
+     }
+     
+     get_username_account_and_project_ids[[user, account_id, project_id, resource_id]] {
+     	user := input.user
+         account_id := input.account_id
+         project_id := input.project_id
+         resource_id := input.resource_id
+     }
+     
+     token = {"payload": payload} {
+       [header, payload, signature] := io.jwt.decode(input.token)
+     }
+     
+     get_username_account_and_project_ids[[user, account_id, project_id, resource_id]] {
+     	user := token.payload.preferred_username
+         account_id := token.payload.account_id
+         project_id := token.payload.project_id
+         resource_id := token.payload.resource_id
+     }
+     
+     default get_region = ""
+     get_region = region {
+     	region = input.region
+     }
+     
+     
+     validate {
+         region := get_region
+     	get_username_account_and_project_ids[[user, account_id, project_id, resource_id]]
+         user == data.policy.Statement[i].Principal.user
+         check_action(data.policy.Statement[i])
+         check_resource(data.policy.Statement[i], region, account_id, project_id, resource_id)
+         check_condition(data.policy.Statement[i])
+     }
+     
+     deny {
+         data.policy.Statement[i].Effect == "Deny"
+         validate
+     }
+     
+     allow {
+         not deny
+     	validate
+     }
+kind: ConfigMap
+metadata:
+  name: access-control-policy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: opa
+  name: opa
+spec:
+  ports:
+  - name: http
+    port: 8181
+    protocol: TCP
+    targetPort: 8181
+  selector:
+    app: opa
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: opa
+  name: opa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opa
+  template:
+    metadata:
+      labels:
+        app: opa
+      name: opa
+    spec:
+      imagePullSecrets:
+      - name: sbercloud-harbor-dev
+      containers:
+      - args:
+        - run
+        - --ignore=.*
+        - --server
+        - /policies
+        image: openpolicyagent/opa:0.34.2
+        imagePullPolicy: Always
+        name: opa
+        ports:
+        - containerPort: 8181
+          name: http
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /policies
+          name: access-control-policy
+          readOnly: true
+      restartPolicy: Always
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: access-control-policy
+        name: access-control-policy
