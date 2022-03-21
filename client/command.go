@@ -42,7 +42,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/pinterest/knox"
+	"github.com/pavelzhurov/knox"
 )
 
 const defaultTokenFileLocation = ".knox_user_auth"

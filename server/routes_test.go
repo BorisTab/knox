@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pinterest/knox"
-	"github.com/pinterest/knox/server/auth"
-	"github.com/pinterest/knox/server/keydb"
+	"github.com/pavelzhurov/knox"
+	"github.com/pavelzhurov/knox/server/auth"
+	"github.com/pavelzhurov/knox/server/keydb"
 )
 
 func makeDB() (KeyManager, *keydb.TempDB) {
