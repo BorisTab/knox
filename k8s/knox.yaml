@@ -48,6 +48,20 @@ spec:
             secretKeyRef:
               name: mysql-password
               key: password
+        - name: AUTHZ_REGION
+          value: AZ1
+        - name: AUTHZ_ACCOUNT_ID
+          value: "123"
+        - name: AUTHZ_PROJECT_ID
+          value: "456"
+        - name: AUTHZ_RESOURCE_ID
+          value: "789"
+        - name: AUTHZ_OPA_URL
+          value: http://opa:8181
+        - name: AUTHZ_OPATIMEOUT
+          value: "300"
+        - name: AUTHZ_OPA_INSECURE
+          value: "true"
         ports:
         - containerPort: 9000
           name: knox
