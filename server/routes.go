@@ -150,7 +150,7 @@ func verifyKeys(m KeyManager, principal knox.Principal, keys []string) ([]string
 		if err != nil {
 			return nil, fmt.Errorf("can't verify principal %s access to one of the keys", principal.GetID())
 		}
-		if principal.CanAccess(key.ACL, knox.Read) {
+		if principal.CanAccess(key.ACL, knox.Read) || principal.CanAccessOPA(m.GetAuthenticator(), keyID, "VerifyKeys", "pvc", "kms") {
 			return_keys = append(return_keys, keyID)
 		}
 	}
@@ -233,7 +233,7 @@ func getKeyHandler(m KeyManager, principal knox.Principal, parameters map[string
 	}
 
 	// Authorize access to data
-	if !principal.CanAccess(key.ACL, knox.Read) && !principal.CanAccessOPA(m.GetAuthenticator(), keyID, knox.Read, "pvc", "kms") {
+	if !principal.CanAccess(key.ACL, knox.Read) && !principal.CanAccessOPA(m.GetAuthenticator(), keyID, "GetKey", "pvc", "kms") {
 		return nil, errF(knox.UnauthorizedCode, fmt.Sprintf("Principal %s not authorized to read %s", principal.GetID(), keyID))
 	}
 	// Zero ACL for key response, in order to avoid caching unnecessarily
@@ -256,7 +256,7 @@ func deleteKeyHandler(m KeyManager, principal knox.Principal, parameters map[str
 	}
 
 	// Authorize
-	if !principal.CanAccess(key.ACL, knox.Admin) && !principal.CanAccessOPA(m.GetAuthenticator(), keyID, knox.Admin, "pvc", "kms") {
+	if !principal.CanAccess(key.ACL, knox.Admin) && !principal.CanAccessOPA(m.GetAuthenticator(), keyID, "DeleteKey", "pvc", "kms") {
 		return nil, errF(knox.UnauthorizedCode, fmt.Sprintf("Principal %s not authorized to delete %s", principal.GetID(), keyID))
 	}
 
@@ -336,7 +336,7 @@ func putAccessHandler(m KeyManager, principal knox.Principal, parameters map[str
 	}
 
 	// Authorize
-	if !principal.CanAccess(key.ACL, knox.Admin) && !principal.CanAccessOPA(m.GetAuthenticator(), keyID+"/access", knox.Admin, "pvc", "kms") {
+	if !principal.CanAccess(key.ACL, knox.Admin) && !principal.CanAccessOPA(m.GetAuthenticator(), keyID, "PutAccess", "pvc", "kms") {
 		return nil, errF(knox.UnauthorizedCode, fmt.Sprintf("Principal %s not authorized to update access for %s", principal.GetID(), keyID))
 	}
 
@@ -387,7 +387,7 @@ func postVersionHandler(m KeyManager, principal knox.Principal, parameters map[s
 	}
 
 	// Authorize
-	if !principal.CanAccess(key.ACL, knox.Write) && !principal.CanAccessOPA(m.GetAuthenticator(), keyID+"/versions", knox.Write, "pvc", "kms") {
+	if !principal.CanAccess(key.ACL, knox.Write) && !principal.CanAccessOPA(m.GetAuthenticator(), keyID, "PostVersion", "pvc", "kms") {
 		return nil, errF(knox.UnauthorizedCode, fmt.Sprintf("Principal %s not authorized to write %s", principal.GetID(), keyID))
 	}
 
@@ -440,7 +440,7 @@ func putVersionsHandler(m KeyManager, principal knox.Principal, parameters map[s
 	}
 
 	// Authorize
-	if !principal.CanAccess(key.ACL, knox.Write) && !principal.CanAccessOPA(m.GetAuthenticator(), keyID+"/versions/"+versionID, knox.Write, "pvc", "kms") {
+	if !principal.CanAccess(key.ACL, knox.Write) && !principal.CanAccessOPA(m.GetAuthenticator(), keyID, "PutVersions", "pvc", "kms") {
 		return nil, errF(knox.UnauthorizedCode, fmt.Sprintf("Principal %s not authorized to write %s", principal.GetID(), keyID))
 	}
 
