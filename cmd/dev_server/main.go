@@ -166,8 +166,8 @@ func main() {
 	var kubeConfig *Config
 
 	if isDevServer {
-		// db = keydb.NewTempDB()
-		db = keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
+		db = keydb.NewTempDB()
+		// db = keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
 		kubeConfig = &Config{}
 	} else {
 		kubeConfig, err = ReadKubeConfig()
@@ -175,17 +175,36 @@ func main() {
 			errLogger.Fatal("Failed to read setting to config from environment variables:", err)
 		}
 
-		mysql_password, ok := os.LookupEnv("MYSQL_PASSWORD")
+		dbType, ok := os.LookupEnv("DB_TYPE")
 		if !ok {
-			errLogger.Fatal("MYSQL_PASSWORD is not set\n")
+			errLogger.Fatalln("No db type provided")
 		}
-		d, err := sql.Open("mysql", fmt.Sprintf("root:%v@tcp(mysql)/kms", mysql_password))
-		if err != nil {
-			errLogger.Fatalf("Can't connect to MYSQL: %v\n", err)
-		}
-		db, err = keydb.NewSQLDB(d)
-		if err != nil {
-			errLogger.Fatalf("Can't initialize keyDB: %v\n", err)
+
+		switch dbType {
+		case "etcd":
+			endpointsEnv, ok := os.LookupEnv("ETCD_ENDPOINTS")
+			if !ok {
+				errLogger.Fatalln("No etcd endpoints provided")
+			}
+
+			endpoints := strings.Split(endpointsEnv, ";")
+
+			db = keydb.NewEtcdConnector(endpoints, 5*time.Second, 100*time.Millisecond)
+
+		case "mysql":
+		default:
+			mysql_password, ok := os.LookupEnv("MYSQL_PASSWORD")
+			if !ok {
+				errLogger.Fatal("MYSQL_PASSWORD is not set\n")
+			}
+			d, err := sql.Open("mysql", fmt.Sprintf("root:%v@tcp(mysql)/kms", mysql_password))
+			if err != nil {
+				errLogger.Fatalf("Can't connect to MYSQL: %v\n", err)
+			}
+			db, err = keydb.NewSQLDB(d)
+			if err != nil {
+				errLogger.Fatalf("Can't initialize keyDB: %v\n", err)
+			}
 		}
 	}
 
