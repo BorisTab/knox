@@ -8,6 +8,11 @@ spec:
   selector:
     app: knox
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: knox
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,10 +28,32 @@ spec:
       labels:
         app: knox
     spec:
+      serviceAccountName: knox
       imagePullSecrets:
       - name: sbercloud-harbor-dev
+      initContainers:
+      - name: init-spire-client
+        image: gcr.io/spiffe-io/spire-agent:1.1.1
+        command: [ "/bin/sh", "-c", "--"]
+        args: ["/opt/spire/bin/spire-agent api fetch -socketPath /run/spire/sockets/agent.sock -write /certs"]
+        volumeMounts:
+          - name: spire-agent-socket
+            mountPath: /run/spire/sockets
+            readOnly: true
+          - name: certs
+            mountPath: /certs
       containers:
-      - image: registry.sbc.platform5.club/library/knox-server:v0.1.2
+      - name: spire-client
+        image: gcr.io/spiffe-io/spire-agent:1.1.1
+        command: [ "/bin/sh", "-c", "--"]
+        args: ["while true; do /opt/spire/bin/spire-agent api fetch -socketPath /run/spire/sockets/agent.sock -write /certs; sleep 10; done;"]
+        volumeMounts:
+          - name: spire-agent-socket
+            mountPath: /run/spire/sockets
+            readOnly: true
+          - name: certs
+            mountPath: /certs
+      - image: registry.sbc.platform5.club/dev/knox:test-etcd
         name: knox
         imagePullPolicy: Always
         env:
@@ -37,7 +64,11 @@ spec:
         - name: SPIFFE_CA_PATH
           value: /certs/bundle.crt
         - name: KNOX_DNS
-          value: knox.sm-proxy:9000
+          value: knox.{{ NAMESPACE }}:9000
+        - name: DB_TYPE
+          value: etcd
+        - name: ETCD_ENDPOINTS
+          value: etcd-0.etcd:2379;etcd-1.etcd:2379;etcd-2.etcd:2379
         - name: RSA_PUBLIC_KEY
           valueFrom:
             secretKeyRef:
@@ -73,3 +104,9 @@ spec:
       - name: spire-bundle
         configMap:
           name: spire-bundle
+      - name: spire-agent-socket
+        hostPath:
+          path: /run/spire/sockets
+          type: Directory
+      - name: certs
+        emptyDir: {}
