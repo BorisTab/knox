@@ -313,12 +313,14 @@ func (p *JWTProvider) Authenticate(tokenString string, r *http.Request) (knox.Pr
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		if username, ok := claims["preferred_username"].(string); ok {
+		if username, ok := claims["sub"].(string); ok {
 			if group, ok := claims["group"].(string); ok {
 				return NewUser(username, []string{group}), nil
 			} else {
 				return NewUser(username, []string{}), nil
 			}
+		} else {
+			return nil, fmt.Errorf("bad token. Expected sub claim %+v", token)
 		}
 	}
 	return nil, fmt.Errorf("bad token %+v", token)
