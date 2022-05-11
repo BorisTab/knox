@@ -6,23 +6,23 @@ data:
         "Statement": [
             {
                 "Principal": {
-                    "user": "44dfabb0_5a19_47f6_85ab_a66c165c2581"
+                    "user": ""
                 },
                 "Effect": "Allow",
                 "Action": [
                     "*"
                 ],
-                "Resource": ["rn:pvc:kms:AZ1:123:456:789/*/*"]
+                "Resource": ["rn:pvc:kms:AZ1:123:456:789/<sub>"]
             },
             {
                 "Principal": {
-                    "user": "{{ .Values.user }}"
+                    "user": "<spiffe_id>"
                 },
                 "Effect": "Allow",
                 "Action": [
-                    "*"
+                    "kms:Read"
                 ],
-                "Resource": ["rn:pvc:S3:{{ .Values.availability_zone }}:{{ .Values.account_id }}:{{ .Values.project_id }}:{{ .Values.resource_id }}/*"]
+                "Resource": ["rn:pvc:kms:AZ1:123:456:789/<sub>"]
             }
         ]
       }
