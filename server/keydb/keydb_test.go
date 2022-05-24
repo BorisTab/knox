@@ -37,7 +37,7 @@ func newDBKey(id string, d []byte, version int64) DBKey {
 
 func TestTemp(t *testing.T) {
 	// db := NewTempDB()
-	db := NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
+	db := NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 2*time.Second, 5*time.Second, 100*time.Millisecond)
 	timeout := 100 * time.Millisecond
 	TesterAddGet(t, db, timeout)
 	TesterAddUpdate(t, db, timeout)

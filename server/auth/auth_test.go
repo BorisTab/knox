@@ -290,7 +290,7 @@ func TestGetUser(t *testing.T) {
 	if !ok {
 		t.Error("unexpected type of principal")
 	}
-	if u.GetID() != "testuser" {
+	if u.GetID() != "1234567890" {
 		t.Error("unexpected principal")
 	}
 	if !u.inGroup("testgroup") {

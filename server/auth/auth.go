@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
@@ -12,7 +11,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -135,29 +133,21 @@ func (p *MTLSAuthProvider) Authenticate(token string, r *http.Request) (knox.Pri
 // NewSpiffeAuthProvider initializes a chain of trust with given CA certificates,
 // identical to the MTLS provider except the principal is a Spiffe ID instead
 // of a hostname and the CN of the cert is ignored.
-func NewSpiffeAuthProvider(CAs *x509.CertPool, isDevServer bool, cmName, crtName string) *SpiffeProvider {
-	var kubeClient *k8s
-	if !isDevServer {
-		kubeClient = NewKubernetesClient()
-	}
+func NewSpiffeAuthProvider(CAs *x509.CertPool, isDevServer bool, spiffeCAPath string) *SpiffeProvider {
 	return &SpiffeProvider{
-		isDev:   isDevServer,
-		CAs:     CAs,
-		time:    time.Now,
-		kuber:   kubeClient,
-		cmName:  cmName,
-		crtName: crtName,
+		isDev:        isDevServer,
+		CAs:          CAs,
+		spiffeCAPath: spiffeCAPath,
+		time:         time.Now,
 	}
 }
 
 // SpiffeProvider does authentication by verifying TLS certs against a collection of root CAs
 type SpiffeProvider struct {
-	isDev   bool
-	CAs     *x509.CertPool
-	time    func() time.Time
-	kuber   *k8s
-	cmName  string
-	crtName string
+	isDev        bool
+	CAs          *x509.CertPool
+	time         func() time.Time
+	spiffeCAPath string
 }
 
 // Version is set to 0 for SpiffeProvider
@@ -178,11 +168,11 @@ func (p *SpiffeProvider) Type() byte {
 func (p *SpiffeProvider) ReloadCerts() error {
 	certPool := x509.NewCertPool()
 
-	spiffeCaRAW, err := p.kuber.CoreV1().ConfigMaps(p.kuber.namespace).Get(context.TODO(), p.cmName, metav1.GetOptions{})
+	spiffeCaRAW, err := ioutil.ReadFile(p.spiffeCAPath)
 	if err != nil {
-		return fmt.Errorf("couldn't get spiffe CA cert from configmap")
+		return fmt.Errorf("couldn't read spiffe CA cert by path: %s", p.spiffeCAPath)
 	}
-	ok := certPool.AppendCertsFromPEM([]byte(spiffeCaRAW.Data[p.crtName]))
+	ok := certPool.AppendCertsFromPEM([]byte(spiffeCaRAW))
 	if !ok {
 		return fmt.Errorf("couldn't reload spiffe CA cert")
 	}

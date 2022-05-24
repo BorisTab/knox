@@ -284,7 +284,7 @@ func TestScrub(t *testing.T) {
 func TestDuplicateRouteId(t *testing.T) {
 	cryptor := keydb.NewAESGCMCryptor(0, []byte("testtesttesttest"))
 	// db := keydb.NewTempDB()
-	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
+	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 2*time.Second, 5*time.Second, 100*time.Millisecond)
 	decorators := [](func(http.HandlerFunc) http.HandlerFunc){}
 	additionalRoutes := []Route{
 		{
@@ -316,7 +316,7 @@ func TestDuplicateRouteId(t *testing.T) {
 func TestDuplicateMethodAndPath(t *testing.T) {
 	cryptor := keydb.NewAESGCMCryptor(0, []byte("testtesttesttest"))
 	// db := keydb.NewTempDB()
-	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
+	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 2*time.Second, 5*time.Second, 100*time.Millisecond)
 	decorators := [](func(http.HandlerFunc) http.HandlerFunc){}
 	additionalRoutes := []Route{
 		{
@@ -350,7 +350,7 @@ func TestDuplicateMethodAndPath(t *testing.T) {
 func TestAdditionalRouteFunctionality(t *testing.T) {
 	cryptor := keydb.NewAESGCMCryptor(0, []byte("testtesttesttest"))
 	// db := keydb.NewTempDB()
-	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
+	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 2*time.Second, 5*time.Second, 100*time.Millisecond)
 	decorators := [](func(http.HandlerFunc) http.HandlerFunc){}
 	additionalRoutes := []Route{
 		additionalMockRoute(),

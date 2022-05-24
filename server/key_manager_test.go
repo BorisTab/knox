@@ -13,7 +13,7 @@ import (
 
 func GetMocks() (KeyManager, knox.Principal, knox.ACL) {
 	// db := keydb.NewTempDB()
-	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
+	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 2*time.Second, 5*time.Second, 100*time.Millisecond)
 	cryptor := keydb.NewAESGCMCryptor(10, []byte("testtesttesttest"))
 	m := NewKeyManager(cryptor, db)
 	acl := knox.ACL([]knox.Access{})

@@ -57,7 +57,7 @@ func getRouter() *mux.Router {
 func setup() {
 	cryptor := keydb.NewAESGCMCryptor(0, []byte("testtesttesttest"))
 	// db := keydb.NewTempDB()
-	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 5*time.Second, 100*time.Millisecond)
+	db := keydb.NewEtcdConnector([]string{"localhost:2379", "etcd:2379"}, 2*time.Second, 5*time.Second, 100*time.Millisecond)
 	decorators := [](func(http.HandlerFunc) http.HandlerFunc){
 		AddHeader("Content-Type", "application/json"),
 		AddHeader("X-Content-Type-Options", "nosniff"),

@@ -1,11 +1,11 @@
-#dev_*
+dev_*
 keycloak-dev-public-key.pem
+keycloak-test-public-key.pem
+spiffe_ca.crt
 test_key.json
 k8s/keycloak-dev-public-key.pem
 k8s/create_secrets.sh
 k8s/ingress.yaml
 .DS_Store
 .idea
-./dev_client
-dev_client
 k8s/ingress-prod.yaml
