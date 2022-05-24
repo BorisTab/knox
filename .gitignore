@@ -1,4 +1,4 @@
-dev_*
+/dev_*
 keycloak-dev-public-key.pem
 keycloak-test-public-key.pem
 spiffe_ca.crt
