@@ -3,7 +3,6 @@ package keydb
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -17,7 +16,6 @@ type EtcdConnector struct {
 }
 
 func NewEtcdConnector(endpoints []string, initialTimeout, dialTimeout, contextTimeout time.Duration) *EtcdConnector {
-	fmt.Println(dialTimeout)
 	clientConfig := clientv3.Config{
 		Endpoints:   endpoints,
 		DialTimeout: dialTimeout,

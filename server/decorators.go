@@ -133,7 +133,6 @@ type request struct {
 	Parameters         map[string]string `json:"parameters"`
 	ParsedQuery        map[string]string `json:"parsed_query_string"`
 	Principal          string            `json:"principal"`
-	FallbackPrincipals []string          `json:"fallback_principals"`
 	AuthType           string            `json:"auth_type"`
 	RequestURI         string            `json:"request_uri"`
 	RemoteAddr         string            `json:"remote_addr"`
@@ -176,9 +175,6 @@ func buildRequest(req *http.Request, p knox.Principal, params map[string]string)
 	if p != nil {
 		r.Principal = p.GetID()
 		r.AuthType = p.Type()
-		if mux, ok := p.(knox.PrincipalMux); ok {
-			r.FallbackPrincipals = mux.GetIDs()
-		}
 	} else {
 		r.Principal = ""
 		r.AuthType = ""
@@ -193,48 +189,54 @@ func buildRequest(req *http.Request, p knox.Principal, params map[string]string)
 	return r
 }
 
+type ProviderType int
+
+const (
+	MTLSAuthProviderType ProviderType = iota
+	JWTProviderType
+	SpiffeAuthProviderType
+	NoFoundProviderType
+)
+
 // Authentication sets the principal or returns an error if the principal cannot be authenticated.
 func Authentication(providers []auth.Provider) func(http.HandlerFunc) http.HandlerFunc {
 	return func(f http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			var defaultPrincipal knox.Principal
-			allPrincipals := map[string]knox.Principal{}
 			errReturned := fmt.Errorf("no matching authentication providers found")
-
-			for _, p := range providers {
-				if token, match := providerMatch(p, r.Header.Get("Authorization")); match {
-					principal, errAuthenticate := p.Authenticate(token, r)
-					if errAuthenticate != nil {
-						errReturned = errAuthenticate
-						continue
-					}
-					if defaultPrincipal == nil {
-						// First match is considered the default principal to use.
-						defaultPrincipal = principal
-					}
-
-					// We record the name of the provider to be used in logging, so we can record
-					// information about which provider authenticated which principal later on.
-					allPrincipals[p.Name()] = principal
-				}
-			}
-			if defaultPrincipal == nil {
+			providerType := getProvider(r)
+			if providerType == NoFoundProviderType {
 				writeErr(errF(knox.UnauthenticatedCode, errReturned.Error()))(w, r)
 				return
 			}
 
-			setPrincipal(r, knox.NewPrincipalMux(defaultPrincipal, allPrincipals))
+			principal, errAuthenticate := providers[providerType].Authenticate(r)
+			if errAuthenticate != nil {
+				writeErr(errF(knox.UnauthenticatedCode, errAuthenticate.Error()))(w, r)
+				return
+			}
+
+			setPrincipal(r, principal)
 			f(w, r)
 			return
 		}
 	}
 }
 
-func providerMatch(provider auth.Provider, a string) (string, bool) {
-	if len(a) > 2 && a[0] == provider.Version() && a[1] == provider.Type() {
-		return a[2:], true
+func getProvider(r *http.Request) ProviderType {
+	// If request contain JWT token, it'll be authorized using that token
+	if jwtHeader := r.Header.Get("Authorization"); jwtHeader != "" {
+		return JWTProviderType
 	}
-	return "", false
+
+	if len(r.TLS.PeerCertificates) != 0 {
+		// Check whether certificate contains SPIFFE ID
+		spiffeURIs, err := auth.GetURINamesFromExtensions(&(r.TLS.PeerCertificates[0]).Extensions)
+		if err != nil || len(spiffeURIs) == 0 {
+			return MTLSAuthProviderType
+		}
+		return SpiffeAuthProviderType
+	}
+	return NoFoundProviderType
 }
 
 func parseParams(parameters []Parameter) func(http.HandlerFunc) http.HandlerFunc {

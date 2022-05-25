@@ -366,12 +366,15 @@ func (c *HTTPClient) getHTTPData(method string, path string, body url.Values, da
 	}
 
 	auth := c.AuthHandler()
-	fmt.Printf("Token: %v\n", auth)
-	if auth == "" {
+	switch {
+	case auth == "":
 		return fmt.Errorf("no authentication data given. Use 'knox login' or set KNOX_USER_AUTH or KNOX_MACHINE_AUTH")
+	case auth[:2] == "0u":
+		r.Header.Set("Authorization", auth[2:])
+	case auth[:2] == "0s":
+	default:
+		return fmt.Errorf("wrong authentication type. Use 'knox login' or set KNOX_USER_AUTH or KNOX_MACHINE_AUTH")
 	}
-	// Get user from env variable and machine hostname from elsewhere.
-	r.Header.Set("Authorization", auth)
 	r.Header.Set("User-Agent", fmt.Sprintf("Knox_Client/%s", c.Version))
 
 	if body != nil {

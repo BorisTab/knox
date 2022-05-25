@@ -27,6 +27,7 @@ RUN apk add libc6-compat
 
 WORKDIR /
 
+ENV VERSION=v1.0.4
 COPY --from=build /app/dev_server /knox-server
 RUN chmod +x ./knox-server
 EXPOSE 9000

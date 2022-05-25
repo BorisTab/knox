@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"net/http"
-	"strings"
 	"time"
 
 	"testing"
@@ -96,45 +95,6 @@ func TestServiceCanAccess(t *testing.T) {
 	}
 }
 
-func TestPrincipalMuxType(t *testing.T) {
-	u := NewUser("test", []string{"returntrue"})
-	s := NewService("example.com", "serviceA")
-
-	user := knox.NewPrincipalMux(u, map[string]knox.Principal{"foo": u})
-	service := knox.NewPrincipalMux(s, map[string]knox.Principal{"foo": s})
-	both := knox.NewPrincipalMux(u, map[string]knox.Principal{"foo": u, "bar": s})
-
-	if user.Type() != "user" {
-		t.Error("Type of user-only mux should be 'user'")
-	}
-	if service.Type() != "service" {
-		t.Error("Type of service-only mux should be 'service'")
-	}
-	if !strings.Contains(both.Type(), "mux") || !strings.Contains(both.Type(), "user") || !strings.Contains(both.Type(), "service") {
-		t.Error("Type of mux with both should contain both user and service in the type string")
-	}
-}
-
-func TestPrincipalMuxUserOrService(t *testing.T) {
-	u := NewUser("test", []string{"returntrue"})
-	s := NewService("example.com", "serviceA")
-	userMux := knox.NewPrincipalMux(u, map[string]knox.Principal{"foo": u, "bar": s})
-	serviceMux := knox.NewPrincipalMux(s, map[string]knox.Principal{"foo": u, "bar": s})
-
-	if !IsUser(userMux) {
-		t.Error("IsUser failed to identify that mux is user first.")
-	}
-	if IsService(userMux) {
-		t.Error("IsService failed to identify that mux is user first, and thus not a service.")
-	}
-	if IsUser(serviceMux) {
-		t.Error("IsUser failed to identify that mux is service first, and thus not a user.")
-	}
-	if !IsService(serviceMux) {
-		t.Error("IsService failed to identify that mux is service first.")
-	}
-}
-
 const caCert = `-----BEGIN CERTIFICATE-----
 MIICOjCCAeCgAwIBAgIUIKkBZQbtx8rVaWIOhpabkqZSqecwCgYIKoZIzj0EAwIw
 aTELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExFjAUBgNVBAcTDVNh
@@ -167,10 +127,8 @@ KoZIzj0EAwIDSQAwRgIhAIRd87po8pVE1CFSSM/uPwHFPg3gWlC1Pvl5h5e+2ogf
 AiEA/GIpOpaFQbGSs42rKugOBngKtF0fuRAo2r4vMyL559A=`
 
 func TestMTLSSuccess(t *testing.T) {
-	hostname := "dev-devinlundberg"
 	expected := "dev-devinlundberg"
 	req, _ := http.NewRequest("GET", "http://localhost/", nil)
-	req.Header.Add("Authorization", "0t"+hostname)
 	req.RemoteAddr = "0.0.0.0:23423"
 	certBytes := make([]byte, base64.StdEncoding.DecodedLen(len(clientCertB64)))
 	n, err := base64.StdEncoding.Decode(certBytes, []byte(clientCertB64))
@@ -188,7 +146,7 @@ func TestMTLSSuccess(t *testing.T) {
 		CAs:  caPool,
 		time: func() time.Time { return time.Date(2016, time.April, 22, 11, 0, 0, 0, time.UTC) },
 	}
-	p, err := a.Authenticate(hostname, req)
+	p, err := a.Authenticate(req)
 
 	if err != nil {
 		t.Fatal(err.Error())
@@ -199,9 +157,7 @@ func TestMTLSSuccess(t *testing.T) {
 }
 
 func TestMTLSBadTime(t *testing.T) {
-	hostname := "dev-devinlundberg"
 	req, _ := http.NewRequest("GET", "http://localhost/", nil)
-	req.Header.Add("Authorization", "0t"+hostname)
 	req.RemoteAddr = "0.0.0.0:23423"
 	certBytes := make([]byte, base64.StdEncoding.DecodedLen(len(clientCertB64)))
 	n, err := base64.StdEncoding.Decode(certBytes, []byte(clientCertB64))
@@ -219,7 +175,7 @@ func TestMTLSBadTime(t *testing.T) {
 		CAs:  caPool,
 		time: func() time.Time { return time.Date(2018, time.April, 22, 11, 0, 0, 0, time.UTC) },
 	}
-	_, err = a.Authenticate(hostname, req)
+	_, err = a.Authenticate(req)
 
 	if err == nil {
 		t.Fatal("Call should fail due to expired cert")
@@ -227,9 +183,7 @@ func TestMTLSBadTime(t *testing.T) {
 }
 
 func TestMTLSNoCA(t *testing.T) {
-	hostname := "dev-devinlundberg"
 	req, _ := http.NewRequest("GET", "http://localhost/", nil)
-	req.Header.Add("Authorization", "0t"+hostname)
 	req.RemoteAddr = "0.0.0.0:23423"
 	certBytes := make([]byte, base64.StdEncoding.DecodedLen(len(clientCertB64)))
 	n, err := base64.StdEncoding.Decode(certBytes, []byte(clientCertB64))
@@ -245,44 +199,20 @@ func TestMTLSNoCA(t *testing.T) {
 		CAs:  x509.NewCertPool(),
 		time: func() time.Time { return time.Date(2016, time.April, 22, 11, 0, 0, 0, time.UTC) },
 	}
-	_, err = a.Authenticate(hostname, req)
+	_, err = a.Authenticate(req)
 
 	if err == nil {
 		t.Fatal("There is no matching CA for this cert")
 	}
 }
 
-func TestMTLSBadHostname(t *testing.T) {
-	hostname := "BadHostname"
-	req, _ := http.NewRequest("GET", "http://localhost/", nil)
-	req.Header.Add("Authorization", "0t"+hostname)
-	req.RemoteAddr = "0.0.0.0:23423"
-	certBytes := make([]byte, base64.StdEncoding.DecodedLen(len(clientCertB64)))
-	n, err := base64.StdEncoding.Decode(certBytes, []byte(clientCertB64))
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	c, _ := x509.ParseCertificate(certBytes[:n])
-	req.TLS = &tls.ConnectionState{
-		PeerCertificates: []*x509.Certificate{c},
-	}
-
-	a := MTLSAuthProvider{
-		CAs:  x509.NewCertPool(),
-		time: func() time.Time { return time.Date(2016, time.April, 22, 11, 0, 0, 0, time.UTC) },
-	}
-	_, err = a.Authenticate(hostname, req)
-
-	if err == nil {
-		t.Fatal("hostname should not match")
-	}
-
-}
-
 func TestGetUser(t *testing.T) {
 	token := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidGVzdHVzZXIiLCJncm91cCI6InRlc3Rncm91cCIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjJ9.DcS9iYP6pnATIliTA1REexXyuRuCkZMD3pugHHrB29LGY2jT6qS8evhqq-tAmzx3C0Unmu7CjglX0QAZezZM3Aa3IrKWbCVSIVjky5nO1CJ8OibC0KoK7tOUC-BrwbmeKpFX3Mjp59NfpiQD08loRNBo-g7q6vS4LR_xE78jVDb0x4ZdYboO7KJPHE40pnUEDLGT_psg_Hvtn-HFC-l76RCqxgJv3D53RwnRp0NDeAvCMEPTBfFQ931H5VFEcu9YTummdD062EAVR2KR7nYY7u4Dr2mPw4wuXDvnANjpWFuWHyw9bxB0JIiloeEAWAFjNZpT_lr_GaWrPmOk2xJzOw"
+	req, _ := http.NewRequest("GET", "http://localhost/", nil)
+	req.Header.Add("Authorization", token)
+	req.RemoteAddr = "0.0.0.0:23423"
 	a := MockJWTProvider()
-	principal, err := a.Authenticate(token, nil)
+	principal, err := a.Authenticate(req)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -303,8 +233,11 @@ func TestGetUser(t *testing.T) {
 
 func TestGetInvalidUser(t *testing.T) {
 	token := "notvalid"
+	req, _ := http.NewRequest("GET", "http://localhost/", nil)
+	req.Header.Add("Authorization", token)
+	req.RemoteAddr = "0.0.0.0:23423"
 	a := MockJWTProvider()
-	_, err := a.Authenticate(token, nil)
+	_, err := a.Authenticate(req)
 	if err == nil {
 		t.Error("Expected Error with invalid token")
 	}
@@ -381,7 +314,7 @@ func testSpiffeAuthFlow(t *testing.T, authHeader string, provider Provider) {
 		PeerCertificates: []*x509.Certificate{c},
 	}
 
-	p, err := provider.Authenticate("spiffe://example.com/service", req)
+	p, err := provider.Authenticate(req)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

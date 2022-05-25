@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/gobwas/glob"
-	"github.com/pinterest/knox"
-	"github.com/pinterest/knox/client"
+	"github.com/pavelzhurov/knox"
+	"github.com/pavelzhurov/knox/client"
 )
 
 // certPEMBlock is the certificate signed by the CA to identify the machine using the client
@@ -241,16 +241,7 @@ func authHandler() string {
 	// }
 	_, ok := os.LookupEnv("SPIFFE_CLIENT")
 	if ok {
-		namespace, ok := os.LookupEnv("MY_POD_NAMESPACE")
-		if !ok {
-			fmt.Println("MY_POD_NAMESPACE is not defined")
-		}
-		serviceaccount, ok := os.LookupEnv("MY_POD_SA")
-		if !ok {
-			fmt.Println("MY_POD_SA is not defined")
-		}
-
-		return "0sspiffe://example.org/ns/" + namespace + "/sa/" + serviceaccount
+		return "0s"
 	}
 	u, err := user.Current()
 	if err != nil {

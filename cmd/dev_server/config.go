@@ -31,7 +31,7 @@ type Config struct {
 	EtcdContextTimeout TimeMiliseconds `env:"ETCD_CONTEXT_TIMEOUT" envDefault:"100"`
 
 	KnoxHosts       []string `env:"KNOX_DNS" envSeparator:";" envDefault:"localhost:9000"`
-	IsDevServer     bool     `env:"DEV_SERVER" envDefault:"true"`
+	IsDevServer     bool     `env:"DEV_SERVER" envDefault:"false"`
 	RSAPubKey       string   `env:"RSA_PUBLIC_KEY,notEmpty"`
 	DbEncryptionKey string   `env:"DB_ENCRYPTION_KEY,unset" envDefault:"testtesttesttest"`
 	Version         string   `env:"VERSION,notEmpty"`

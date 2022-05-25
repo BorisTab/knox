@@ -26,6 +26,7 @@ FROM alpine:latest
 
 WORKDIR /
 
+ENV VERSION=v1.0.4
 COPY --from=build /app/dev_server /knox-server
 EXPOSE 9000
 

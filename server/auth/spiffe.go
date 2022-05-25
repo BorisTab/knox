@@ -63,6 +63,9 @@ func GetURINamesFromExtensions(extensions *[]pkix.Extension) (uris []string, err
 			if err != nil {
 				return uris, err
 			}
+			if len(uris) != 0 {
+				return uris, nil
+			}
 		}
 	}
 

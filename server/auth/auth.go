@@ -25,7 +25,7 @@ const (
 // Provider is used for authenticating requests via the authentication decorator.
 type Provider interface {
 	Name() string
-	Authenticate(token string, r *http.Request) (knox.Principal, error)
+	Authenticate(r *http.Request) (knox.Principal, error)
 	Version() byte
 	Type() byte
 }
@@ -115,19 +115,13 @@ func (p *MTLSAuthProvider) Type() byte {
 }
 
 // Authenticate performs TLS based Authentication for the MTLSAuthProvider
-func (p *MTLSAuthProvider) Authenticate(token string, r *http.Request) (knox.Principal, error) {
+func (p *MTLSAuthProvider) Authenticate(r *http.Request) (knox.Principal, error) {
 	cert, err := verifyCertificate(r, p.CAs, p.time)
 	if err != nil {
 		return nil, err
 	}
 
-	// Check the CN matches the token
-	err = cert.VerifyHostname(token)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewMachine(token), nil
+	return NewMachine(cert.Subject.CommonName), nil
 }
 
 // NewSpiffeAuthProvider initializes a chain of trust with given CA certificates,
@@ -181,7 +175,7 @@ func (p *SpiffeProvider) ReloadCerts() error {
 }
 
 // Authenticate performs TLS based Authentication and extracts the Spiffe URI extension
-func (p *SpiffeProvider) Authenticate(token string, r *http.Request) (knox.Principal, error) {
+func (p *SpiffeProvider) Authenticate(r *http.Request) (knox.Principal, error) {
 	if !p.isDev {
 		err := p.ReloadCerts()
 		if err != nil {
@@ -287,7 +281,8 @@ func (p *JWTProvider) Type() byte {
 }
 
 // Authenticate uses the token to get user data from github.com
-func (p *JWTProvider) Authenticate(tokenString string, r *http.Request) (knox.Principal, error) {
+func (p *JWTProvider) Authenticate(r *http.Request) (knox.Principal, error) {
+	tokenString := r.Header.Get("Authorization")
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Validating expected alg:
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
@@ -318,18 +313,12 @@ func (p *JWTProvider) Authenticate(tokenString string, r *http.Request) (knox.Pr
 
 // IsUser returns true if the principal, or first principal in the case of mux, is a user.
 func IsUser(p knox.Principal) bool {
-	if mux, ok := p.(knox.PrincipalMux); ok {
-		p = mux.Default()
-	}
 	_, ok := p.(user)
 	return ok
 }
 
 // IsService returns true if the principal, or first principal in the case of mux, is a service.
 func IsService(p knox.Principal) bool {
-	if mux, ok := p.(knox.PrincipalMux); ok {
-		p = mux.Default()
-	}
 	_, ok := p.(service)
 	return ok
 }
@@ -499,42 +488,7 @@ func (s service) CanAccessOPA(authenticator *authz_utils.Authenticator, path str
 	return result
 }
 
-// type mockHTTPClient struct{}
-
-// func (c *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
-// 	resp := &http.Response{}
-// 	resp.Proto = "HTTP/1.1"
-// 	resp.ProtoMajor = 1
-// 	resp.ProtoMinor = 1
-// 	a := req.Header.Get("Authorization")
-// 	if a == "" || a == "Bearer notvalid" {
-// 		resp.StatusCode = 400
-// 		resp.Body = ioutil.NopCloser(bytes.NewBuffer(nil))
-// 		resp.Status = "400 Unauthorized"
-
-// 		return resp, nil
-// 	}
-// 	switch req.URL.Path {
-// 	case "/user":
-// 		data := "{\"login\":\"testuser\"}"
-// 		resp.Body = ioutil.NopCloser(bytes.NewBufferString(data))
-// 		resp.StatusCode = 200
-// 		return resp, nil
-// 	case "/user/orgs":
-// 		data := "[{\"login\":\"testgroup\"}]"
-// 		resp.Body = ioutil.NopCloser(bytes.NewBufferString(data))
-// 		resp.StatusCode = 200
-// 		return resp, nil
-// 	default:
-// 		resp.StatusCode = 404
-// 		resp.Body = ioutil.NopCloser(bytes.NewBuffer(nil))
-// 		resp.Status = "404 Not found"
-// 		return resp, nil
-// 	}
-
-// }
-
-// MockGitHubProvider returns a mocked out authentication header with a simple mock "server".
+// MockJWTProvider returns a mocked out authentication header with a simple mock "server".
 // If there exists an authorization header with user token that does not equal 'notvalid', it will log in as 'testuser'.
 func MockJWTProvider() *JWTProvider {
 	JWTProvider, _ := NewJWTProvider(
