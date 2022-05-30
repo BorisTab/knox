@@ -104,7 +104,12 @@ func main() {
 		}),
 	}
 
-	r, err := server.GetRouter(cryptor, db, decorators, make([]server.Route, 0))
+	authzType := server.AclAuthorization
+	if knoxConfig.OpaAuthorization {
+		authzType = server.OpaAuthorization
+	}
+
+	r, err := server.GetRouter(cryptor, db, authzType, decorators, make([]server.Route, 0))
 	if err != nil {
 		errLogger.Fatal(err)
 	}

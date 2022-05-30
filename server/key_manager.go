@@ -20,22 +20,28 @@ type KeyManager interface {
 	AddVersion(string, *knox.KeyVersion) error
 	UpdateVersion(keyID string, versionID uint64, s knox.VersionStatus) error
 	GetAuthenticator() *authz_utils.Authenticator
+	GetAuthorizationType() authorizationType
 }
 
 // NewKeyManager builds a struct for interfacing with the keydb.
-func NewKeyManager(c keydb.Cryptor, db keydb.DB) KeyManager {
+func NewKeyManager(c keydb.Cryptor, db keydb.DB, authzType authorizationType) KeyManager {
 	auth, err := authz_utils.NewAuthenticatorFromEnv()
 
 	if err != nil {
 		log.Fatal("Can't create authenticator:", err.Error())
 	}
-	return &keyManager{c, db, auth}
+	return &keyManager{c, db, auth, authzType}
 }
 
 type keyManager struct {
 	cryptor       keydb.Cryptor
 	db            keydb.DB
 	authenticator *authz_utils.Authenticator
+	authzType     authorizationType
+}
+
+func (m *keyManager) GetAuthorizationType() authorizationType {
+	return m.authzType
 }
 
 func (m *keyManager) GetAuthenticator() *authz_utils.Authenticator {

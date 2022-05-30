@@ -32,6 +32,13 @@ type httpErrResp struct {
 	Message string
 }
 
+type authorizationType int
+
+const (
+	AclAuthorization authorizationType = iota
+	OpaAuthorization
+)
+
 // HTTPErrMap is a mapping from err subcodes to the http err response that will be returned.
 var HTTPErrMap = map[int]*httpErrResp{
 	knox.NoKeyIDCode:                   {http.StatusBadRequest, "Missing Key ID"},
@@ -62,6 +69,7 @@ func combine(f, g func(http.HandlerFunc) http.HandlerFunc) func(http.HandlerFunc
 func GetRouter(
 	cryptor keydb.Cryptor,
 	db keydb.DB,
+	authzType authorizationType,
 	decorators [](func(http.HandlerFunc) http.HandlerFunc),
 	additionalRoutes []Route) (*mux.Router, error) {
 
@@ -103,7 +111,7 @@ func GetRouter(
 		decorator = combine(decorators[j], decorator)
 	}
 
-	m := NewKeyManager(cryptor, db)
+	m := NewKeyManager(cryptor, db, authzType)
 
 	r.NotFoundHandler = setupRoute("404", m)(decorator(writeErr(errF(knox.NotFoundCode, ""))))
 

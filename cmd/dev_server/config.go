@@ -30,15 +30,16 @@ type Config struct {
 	EtcdDialTimeout    TimeSeconds     `env:"ETCD_DIAL_TIMEOUT" envDefault:"5"`
 	EtcdContextTimeout TimeMiliseconds `env:"ETCD_CONTEXT_TIMEOUT" envDefault:"100"`
 
-	KnoxHosts       []string `env:"KNOX_DNS" envSeparator:";" envDefault:"localhost:9000"`
-	IsDevServer     bool     `env:"DEV_SERVER" envDefault:"false"`
-	RSAPubKey       string   `env:"RSA_PUBLIC_KEY,notEmpty"`
-	DbEncryptionKey string   `env:"DB_ENCRYPTION_KEY,unset" envDefault:"testtesttesttest"`
-	Version         string   `env:"VERSION,notEmpty"`
-	MySqlPassword   string   `env:"MYSQL_PASSWORD,unset"`
-	DbType          string   `env:"DB_TYPE" envDefault:"mysql"`
-	SpiffeCAPath    string   `env:"SPIFFE_CA_PATH" envDefault:"/certs/bundle.crt"`
-	SpiffeCA        string   `env:"SPIFFE_CA,file" envDefault:"${SPIFFE_CA_PATH}" envExpand:"true"`
+	KnoxHosts        []string `env:"KNOX_DNS" envSeparator:";" envDefault:"localhost:9000"`
+	IsDevServer      bool     `env:"DEV_SERVER" envDefault:"false"`
+	OpaAuthorization bool     `env:"OPA_AUTHORIZATION" envDefault:"false"`
+	RSAPubKey        string   `env:"RSA_PUBLIC_KEY,notEmpty"`
+	DbEncryptionKey  string   `env:"DB_ENCRYPTION_KEY,unset" envDefault:"testtesttesttest"`
+	Version          string   `env:"VERSION,notEmpty"`
+	MySqlPassword    string   `env:"MYSQL_PASSWORD,unset"`
+	DbType           string   `env:"DB_TYPE" envDefault:"mysql"`
+	SpiffeCAPath     string   `env:"SPIFFE_CA_PATH" envDefault:"/certs/bundle.crt"`
+	SpiffeCA         string   `env:"SPIFFE_CA,file" envDefault:"${SPIFFE_CA_PATH}" envExpand:"true"`
 }
 
 func ReadKnoxConfig() (*Config, error) {

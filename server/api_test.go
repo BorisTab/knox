@@ -298,7 +298,7 @@ func TestDuplicateRouteId(t *testing.T) {
 		},
 	}
 
-	_, err := GetRouter(cryptor, db, decorators, additionalRoutes)
+	_, err := GetRouter(cryptor, db, AclAuthorization, decorators, additionalRoutes)
 	if err == nil {
 		t.Fatal("Expected an error when two routes were provided with duplicate IDs")
 	}
@@ -330,7 +330,7 @@ func TestDuplicateMethodAndPath(t *testing.T) {
 		},
 	}
 
-	_, err := GetRouter(cryptor, db, decorators, additionalRoutes)
+	_, err := GetRouter(cryptor, db, AclAuthorization, decorators, additionalRoutes)
 	if err == nil {
 		t.Fatal("Expected an error when two routes were provided with duplicate IDs")
 	}
@@ -355,7 +355,7 @@ func TestAdditionalRouteFunctionality(t *testing.T) {
 	additionalRoutes := []Route{
 		additionalMockRoute(),
 	}
-	router, err := GetRouter(cryptor, db, decorators, additionalRoutes)
+	router, err := GetRouter(cryptor, db, AclAuthorization, decorators, additionalRoutes)
 	if err != nil {
 		t.Fatalf("Did not expect an error while creating router. Details: %v", err)
 	}

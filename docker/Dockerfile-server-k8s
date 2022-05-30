@@ -3,7 +3,7 @@
 ##
 ## Build
 ##
-FROM --platform=linux/amd64 golang:1.17-buster AS build
+FROM --platform=linux/amd64 golang:1.18-buster AS build
 
 WORKDIR /app
 

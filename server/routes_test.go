@@ -13,7 +13,7 @@ import (
 func makeDB() (KeyManager, *keydb.TempDB) {
 	db := &keydb.TempDB{}
 	cryptor := keydb.NewAESGCMCryptor(0, []byte("testtesttesttest"))
-	m := NewKeyManager(cryptor, db)
+	m := NewKeyManager(cryptor, db, AclAuthorization)
 	return m, db
 }
 

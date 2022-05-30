@@ -64,7 +64,7 @@ func setup() {
 		Authentication([]auth.Provider{auth.MockJWTProvider()}),
 	}
 	var err error
-	router, err = GetRouter(cryptor, db, decorators, make([]Route, 0))
+	router, err = GetRouter(cryptor, db, AclAuthorization, decorators, make([]Route, 0))
 	if err != nil {
 		panic(err)
 	}

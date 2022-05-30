@@ -423,7 +423,7 @@ func MockClient(host string) *HTTPClient {
 	return &HTTPClient{
 		Host: host,
 		AuthHandler: func() string {
-			return "TESTAUTH"
+			return "0uTESTAUTH"
 		},
 		KeyFolder: "",
 		Client:    &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}},

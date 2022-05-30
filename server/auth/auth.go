@@ -390,8 +390,8 @@ func (u user) CanAccess(acl knox.ACL, t knox.AccessType) bool {
 	return false
 }
 
-func (u user) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, action string, partition string, service string) bool {
-	result, err := authenticator.Authz(partition, service, u.ID, action, path, nil)
+func CanAccessOPA(principal knox.Principal, authenticator *authz_utils.Authenticator, path, action, partition, service string) bool {
+	result, err := authenticator.Authz(partition, service, principal.GetID(), action, path, nil)
 
 	if err != nil {
 		log.Println("Authenticator error: " + err.Error())
@@ -399,6 +399,10 @@ func (u user) CanAccessOPA(authenticator *authz_utils.Authenticator, path string
 	}
 
 	return result
+}
+
+func (u user) CanAccessOPA(authenticator *authz_utils.Authenticator, path, action, partition, service string) bool {
+	return CanAccessOPA(u, authenticator, path, action, partition, service)
 }
 
 // Machine represents a given machine by their hostname.
@@ -432,15 +436,8 @@ func (m machine) CanAccess(acl knox.ACL, t knox.AccessType) bool {
 	return false
 }
 
-func (m machine) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, action string, partition string, service string) bool {
-	result, err := authenticator.Authz(partition, service, string(m), action, path, nil)
-
-	if err != nil {
-		log.Println("Authenticator error: " + err.Error())
-		return false
-	}
-
-	return result
+func (m machine) CanAccessOPA(authenticator *authz_utils.Authenticator, path, action, partition, service string) bool {
+	return CanAccessOPA(m, authenticator, path, action, partition, service)
 }
 
 // Service represents a given service from a trust domain
@@ -477,15 +474,8 @@ func (s service) CanAccess(acl knox.ACL, t knox.AccessType) bool {
 	return false
 }
 
-func (s service) CanAccessOPA(authenticator *authz_utils.Authenticator, path string, action string, partition string, service string) bool {
-	result, err := authenticator.Authz(partition, service, s.GetID(), action, path, nil)
-
-	if err != nil {
-		log.Println("Authenticator error: " + err.Error())
-		return false
-	}
-
-	return result
+func (s service) CanAccessOPA(authenticator *authz_utils.Authenticator, path, action, partition, service string) bool {
+	return CanAccessOPA(s, authenticator, path, action, partition, service)
 }
 
 // MockJWTProvider returns a mocked out authentication header with a simple mock "server".
