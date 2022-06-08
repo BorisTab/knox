@@ -127,13 +127,15 @@ func (p *MTLSAuthProvider) Authenticate(r *http.Request) (knox.Principal, error)
 // NewSpiffeAuthProvider initializes a chain of trust with given CA certificates,
 // identical to the MTLS provider except the principal is a Spiffe ID instead
 // of a hostname and the CN of the cert is ignored.
-func NewSpiffeAuthProvider(CAs *x509.CertPool, isDevServer bool, spiffeCAPath string) *SpiffeProvider {
-	return &SpiffeProvider{
+func NewSpiffeAuthProvider(isDevServer bool, spiffeCAPath string) *SpiffeProvider {
+	newSpiffeProvider := &SpiffeProvider{
 		isDev:        isDevServer,
-		CAs:          CAs,
+		CAs:          nil,
 		spiffeCAPath: spiffeCAPath,
 		time:         time.Now,
 	}
+	newSpiffeProvider.ReloadCerts()
+	return newSpiffeProvider
 }
 
 // SpiffeProvider does authentication by verifying TLS certs against a collection of root CAs

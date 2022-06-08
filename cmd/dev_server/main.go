@@ -99,7 +99,7 @@ func main() {
 		server.Authentication([]auth.Provider{
 			auth.NewMTLSAuthProvider(certPool),
 			JWTProvider,
-			auth.NewSpiffeAuthProvider(certPool, knoxConfig.IsDevServer, knoxConfig.SpiffeCAPath),
+			auth.NewSpiffeAuthProvider(knoxConfig.IsDevServer, knoxConfig.SpiffeCAPath),
 			auth.NewSpiffeAuthFallbackProvider(certPool),
 		}),
 	}
