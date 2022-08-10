@@ -32,6 +32,9 @@ type Provider interface {
 
 func verifyCertificate(r *http.Request, cas *x509.CertPool,
 	timeFunc func() time.Time) (*x509.Certificate, error) {
+	if r.TLS == nil {
+		return nil, fmt.Errorf("auth: No TLS connection state")
+	}
 	certs := r.TLS.PeerCertificates
 	if len(certs) == 0 {
 		return nil, fmt.Errorf("auth: No peer certs configured")

@@ -15,10 +15,9 @@ import (
 	"github.com/pavelzhurov/knox/client"
 )
 
-
 // tokenEndpoint and clientID are used by "knox login" if your oauth client supports password flows.
-const tokenEndpoint = "https://keycloak-dev.sup.sbc.platform5.club/auth/realms/bootcamp/protocol/openid-connect/token"
-const clientID = "bootcamp-app"
+const tokenEndpoint = "https://keycloak.apps.rnd.sbc.space/realms/development/protocol/openid-connect/token"
+const clientID = "dev-client"
 
 // keyFolder is the directory where keys are cached
 const keyFolder = "/var/lib/knox/v0/keys/"
@@ -65,7 +64,7 @@ func main() {
 
 	tlsConfig := &tls.Config{
 		ServerName:         hostname,
-		// InsecureSkipVerify: true,
+		InsecureSkipVerify: true,
 	}
 	_, ok = os.LookupEnv("SPIFFE_CLIENT")
 	if ok {
